@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model GymOwner {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  fullName     String
+  phoneNumber  String
+  gymName      String
+  gymAddress   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  members      Member[]
+  
+  @@map("gym_owners")
+}
+
+model Member {
+  id              String    @id @default(uuid())
+  membershipId    String    @unique
+  fullName        String
+  email           String?
+  phoneNumber     String
+  photoUrl        String?
+  dateOfBirth     DateTime?
+  gender          String?
+  address         String?
+  emergencyContact String?
+  joiningDate     DateTime  @default(now())
+  isActive        Boolean   @default(true)
+  
+  gymOwnerId      String
+  gymOwner        GymOwner  @relation(fields: [gymOwnerId], references: [id], onDelete: Cascade)
+  
+  memberships     Membership[]
+  payments        Payment[]
+  attendance      Attendance[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@map("members")
+  @@index([gymOwnerId])
+}
+
+model Membership {
+  id              String    @id @default(uuid())
+  planName        String    // e.g., "Monthly", "Quarterly", "Yearly"
+  planDuration    Int       // Duration in days
+  planAmount      Decimal   @db.Decimal(10, 2)
+  startDate       DateTime
+  endDate         DateTime
+  status          String    @default("active") // active, expired, cancelled
+  
+  memberId        String
+  member          Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@map("memberships")
+  @@index([memberId])
+  @@index([status])
+  @@index([endDate])
+}
+
+model Payment {
+  id              String    @id @default(uuid())
+  amount          Decimal   @db.Decimal(10, 2)
+  paymentDate     DateTime  @default(now())
+  paymentMethod   String    // cash, card, upi, online
+  remarks         String?
+  
+  memberId        String
+  member          Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime  @default(now())
+  
+  @@map("payments")
+  @@index([memberId])
+  @@index([paymentDate])
+}
+
+model Attendance {
+  id              String    @id @default(uuid())
+  checkInTime     DateTime  @default(now())
+  checkOutTime    DateTime?
+  
+  memberId        String
+  member          Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  @@map("attendance")
+  @@index([memberId])
+  @@index([checkInTime])
+}
