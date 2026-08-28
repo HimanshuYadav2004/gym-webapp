@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs';
 
+dotenv.config();
+
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import membershipRoutes from './routes/membershipRoutes.js';
@@ -14,11 +16,9 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 
 // Use Supabase storage for production, local storage for development
 const useSupabaseStorage = process.env.USE_SUPABASE_STORAGE === 'true';
-const memberRoutes = useSupabaseStorage 
+const memberRoutes = useSupabaseStorage
   ? (await import('./routes/memberRoutesSupabase.js')).default
   : (await import('./routes/memberRoutes.js')).default;
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
