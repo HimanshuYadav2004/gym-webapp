@@ -1,16 +1,8 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import {
-  LayoutDashboard,
-  Users,
-  Calendar,
-  IndianRupee,
-  AlertCircle,
-  LogOut,
-  Dumbbell
-} from 'lucide-react';
+import { LayoutDashboard, Building2, LogOut, ShieldCheck } from 'lucide-react';
 
-const Layout = () => {
+const SuperAdminLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -20,41 +12,30 @@ const Layout = () => {
   };
 
   const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/members', icon: Users, label: 'Members' },
-    { path: '/due-members', icon: AlertCircle, label: 'Due Members' },
-    { path: '/payments', icon: IndianRupee, label: 'Payments' },
-    { path: '/attendance', icon: Calendar, label: 'Attendance' },
+    { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Platform' },
+    { path: '/admin/gyms', icon: Building2, label: 'All Gyms' },
   ];
-
-  const initials = (user?.gymName || user?.fullName || 'G')
-    .split(' ')
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
 
   return (
     <div className="min-h-screen flex bg-ink-950">
-      {/* Sidebar */}
       <aside className="w-72 shrink-0 h-screen sticky top-0 flex flex-col bg-ink-900 border-r border-white/10">
         <div className="px-6 pt-7 pb-6">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary-500/15 ring-1 ring-primary-400/25">
-              <Dumbbell className="text-primary-400" size={22} />
+              <ShieldCheck className="text-primary-400" size={22} />
             </div>
             <div className="min-w-0">
               <h1 className="font-display text-lg tracking-wide leading-none">
                 GYM<span className="text-primary-500">FLOW</span>
               </h1>
-              <p className="text-xs text-ink-400 mt-1.5 truncate">{user?.gymName}</p>
+              <p className="text-xs text-primary-400 mt-1.5 font-semibold uppercase tracking-wide">Super Admin</p>
             </div>
           </div>
         </div>
 
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           <p className="px-3.5 mb-2 text-[0.65rem] font-semibold text-ink-500 uppercase tracking-widest">
-            Overview
+            Platform
           </p>
           {navItems.map((item) => (
             <NavLink
@@ -72,7 +53,7 @@ const Layout = () => {
           <div className="border-t border-white/10 pt-4">
             <div className="flex items-center gap-3 px-2 mb-3">
               <div className="avatar-fallback w-9 h-9 text-xs ring-1 ring-white/10">
-                {initials}
+                {(user?.fullName || 'A').charAt(0)}
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white truncate">{user?.fullName}</p>
@@ -90,7 +71,6 @@ const Layout = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 min-w-0">
         <div className="max-w-[1400px] mx-auto p-6 md:p-10">
           <Outlet />
@@ -100,4 +80,4 @@ const Layout = () => {
   );
 };
 
-export default Layout;
+export default SuperAdminLayout;

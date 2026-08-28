@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft, Camera, User } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -59,18 +59,18 @@ const AddMember = () => {
   return (
     <div className="max-w-3xl">
       <div className="mb-6">
-        <button 
+        <button
           onClick={() => navigate('/members')}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          className="btn-ghost -ml-3 mb-3"
         >
-          <ArrowLeft size={20} className="mr-2" />
+          <ArrowLeft size={17} />
           Back to Members
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Add New Member</h1>
-        <p className="text-gray-600 mt-2">Fill in the member details below</p>
+        <h1 className="page-title">Add New Member</h1>
+        <p className="page-subtitle">Fill in the member details below</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="card space-y-6">
+      <form onSubmit={handleSubmit} className="card space-y-8">
         {/* Photo Upload */}
         <div className="flex justify-center">
           <div className="relative">
@@ -78,11 +78,11 @@ const AddMember = () => {
               <img
                 src={photoPreview}
                 alt="Preview"
-                className="w-32 h-32 rounded-full object-cover"
+                className="w-28 h-28 rounded-full object-cover ring-4 ring-white/5"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center">
-                <Upload className="text-gray-400" size={32} />
+              <div className="w-28 h-28 rounded-full bg-white/5 flex items-center justify-center ring-4 ring-white/5">
+                <User className="text-ink-500" size={36} />
               </div>
             )}
             <input
@@ -94,23 +94,25 @@ const AddMember = () => {
             />
             <label
               htmlFor="photo-upload"
-              className="absolute bottom-0 right-0 bg-primary-600 text-white rounded-full p-2 cursor-pointer hover:bg-primary-700"
+              className="absolute -bottom-1 -right-1 bg-primary-600 text-white rounded-full p-2.5 cursor-pointer hover:bg-primary-700 shadow-soft transition-colors"
             >
-              <Upload size={16} />
+              <Camera size={15} />
             </label>
           </div>
         </div>
 
         {/* Personal Information */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wide mb-4 pb-3 border-b border-white/10">
+            Personal Information
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="label">Full Name *</label>
               <input
                 type="text"
                 className="input"
-                placeholder="John Doe"
+                placeholder="Rohan Sharma"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 required
@@ -122,7 +124,7 @@ const AddMember = () => {
               <input
                 type="tel"
                 className="input"
-                placeholder="+1 234 567 8900"
+                placeholder="+91 98765 43210"
                 value={formData.phoneNumber}
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 required
@@ -134,7 +136,7 @@ const AddMember = () => {
               <input
                 type="email"
                 className="input"
-                placeholder="john@example.com"
+                placeholder="rohan.sharma@gmail.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
@@ -169,7 +171,7 @@ const AddMember = () => {
               <input
                 type="tel"
                 className="input"
-                placeholder="+1 234 567 8900"
+                placeholder="+91 98765 43210"
                 value={formData.emergencyContact}
                 onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
               />
@@ -183,14 +185,14 @@ const AddMember = () => {
           <textarea
             className="input"
             rows="3"
-            placeholder="123 Main St, City, State, ZIP"
+            placeholder="House No. 245, Sector 22, Chandigarh, 160022"
             value={formData.address}
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
           />
         </div>
 
         {/* Actions */}
-        <div className="flex space-x-4">
+        <div className="flex gap-3 pt-2">
           <button
             type="submit"
             disabled={loading}

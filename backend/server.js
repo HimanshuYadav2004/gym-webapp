@@ -13,6 +13,9 @@ import membershipRoutes from './routes/membershipRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import checkinRoutes from './routes/checkinRoutes.js';
+import licenseRoutes from './routes/licenseRoutes.js';
+import superAdminRoutes from './routes/superAdminRoutes.js';
 
 // Use Supabase storage for production, local storage for development
 const useSupabaseStorage = process.env.USE_SUPABASE_STORAGE === 'true';
@@ -33,7 +36,19 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Middleware
-app.use(cors());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim());
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow non-browser clients (curl, server-to-server) which send no Origin header
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  }
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -47,6 +62,9 @@ app.use('/api/memberships', membershipRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/checkin', checkinRoutes);
+app.use('/api/license', licenseRoutes);
+app.use('/api/super-admin', superAdminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

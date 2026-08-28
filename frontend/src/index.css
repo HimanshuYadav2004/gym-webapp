@@ -4,32 +4,184 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-ink-950 text-white antialiased;
+    font-feature-settings: 'ss01' 1, 'cv01' 1;
+  }
+
+  ::selection {
+    @apply bg-primary-500/40 text-white;
+  }
+
+  /* Slim, premium scrollbars */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+
+  /* Native <select> dropdown popups don't inherit the page's translucent
+     dark background, so force an opaque one here or options render invisible
+     (white text on the browser's default white popup). */
+  select option {
+    @apply bg-ink-800 text-white;
   }
 }
 
 @layer components {
+  /* ---- Buttons ---- */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-semibold py-2.5 px-4 rounded-xl shadow-soft transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
-  
+
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 active:bg-white/15 text-white font-semibold py-2.5 px-4 rounded-xl border border-white/10 transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
-  
+
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply inline-flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold py-2.5 px-4 rounded-xl shadow-soft transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
   }
-  
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 text-ink-400 hover:text-white hover:bg-white/10 font-medium py-2 px-3 rounded-lg transition-colors duration-150;
+  }
+
+  /* ---- Surfaces ---- */
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    @apply bg-ink-900 rounded-2xl shadow-card border border-white/10 p-6;
   }
-  
+
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lift hover:-translate-y-0.5 hover:border-primary-500/30;
+  }
+
+  /* ---- Form controls ---- */
   .input {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3.5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[0.925rem] text-white placeholder:text-ink-500 transition-all duration-150 focus:outline-none focus:ring-4 focus:ring-primary-500/15 focus:border-primary-400;
   }
-  
+
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-2;
+    @apply block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5;
   }
+
+  /* ---- Typography ---- */
+  .page-title {
+    @apply font-display text-3xl md:text-4xl text-white uppercase tracking-wide;
+  }
+
+  .page-subtitle {
+    @apply text-ink-400 mt-1;
+  }
+
+  /* ---- Badges ---- */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .badge-success {
+    @apply badge bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/20;
+  }
+
+  .badge-warning {
+    @apply badge bg-amber-500/15 text-amber-400 ring-1 ring-inset ring-amber-500/20;
+  }
+
+  .badge-danger {
+    @apply badge bg-rose-500/15 text-rose-400 ring-1 ring-inset ring-rose-500/20;
+  }
+
+  .badge-neutral {
+    @apply badge bg-white/10 text-ink-300 ring-1 ring-inset ring-white/10;
+  }
+
+  .badge-info {
+    @apply badge bg-sky-500/15 text-sky-400 ring-1 ring-inset ring-sky-500/20;
+  }
+
+  /* ---- Avatars ---- */
+  .avatar-fallback {
+    @apply flex items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-primary-800 text-white font-bold shrink-0;
+  }
+
+  /* ---- Sidebar nav ---- */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[0.925rem] font-medium text-ink-300 transition-all duration-150 hover:bg-white/5 hover:text-white;
+  }
+
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[0.925rem] font-semibold text-white bg-white/10 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)];
+  }
+
+  /* ---- Tables ---- */
+  .table-head {
+    @apply px-5 py-3 text-left text-[0.7rem] font-semibold text-ink-500 uppercase tracking-wider;
+  }
+
+  /* ---- Loading spinner ---- */
+  .spinner {
+    @apply animate-spin rounded-full border-2 border-white/10 border-t-primary-500;
+  }
+
+  /* ---- Modal ---- */
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4;
+  }
+
+  .modal-panel {
+    @apply bg-ink-900 border border-white/10 rounded-2xl shadow-lift p-6 max-w-md w-full max-h-[90vh] overflow-y-auto;
+  }
+
+  /* ---- Spotlight hover glow ---- */
+  .spotlight {
+    @apply pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100;
+    background: radial-gradient(360px circle at var(--spot-x, 50%) var(--spot-y, 50%), var(--spot-color, rgb(249 115 22 / 0.14)), transparent 72%);
+  }
+}
+
+@layer utilities {
+  .animate-fade-up {
+    animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Diagonal hazard-stripe accent bar — used as a section divider */
+  .hazard-stripe {
+    height: 6px;
+    background-image: repeating-linear-gradient(
+      -45deg,
+      theme('colors.primary.500') 0,
+      theme('colors.primary.500') 8px,
+      theme('colors.ink.950') 8px,
+      theme('colors.ink.950') 16px
+    );
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aurora-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(40px, -30px) scale(1.15); }
+}
+
+@keyframes aurora-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, 30px) scale(1.1); }
 }

@@ -11,4 +11,15 @@ if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
+// A 402 means the gym's license has expired — bounce to the renewal page
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 402 && !window.location.pathname.startsWith('/renew')) {
+      window.location.href = '/renew';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default axios;

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Phone, Mail, MapPin, Calendar, DollarSign, 
-  CreditCard, Plus, CheckCircle 
+import {
+  ArrowLeft, Phone, Mail, MapPin, Calendar, CreditCard, Plus, CheckCircle2, X
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { formatINR } from '../utils/currency';
 
 const MemberDetails = () => {
   const { id } = useParams();
@@ -34,78 +34,69 @@ const MemberDetails = () => {
 
   if (loading) {
     return <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="spinner w-12 h-12"></div>
     </div>;
   }
 
   const latestMembership = member?.memberships?.[0];
-  const latestPayment = member?.payments?.[0];
 
   return (
     <div className="space-y-6">
-      <div>
-        <button 
-          onClick={() => navigate('/members')}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-        >
-          <ArrowLeft size={20} className="mr-2" />
-          Back to Members
-        </button>
-      </div>
+      <button
+        onClick={() => navigate('/members')}
+        className="btn-ghost -ml-3"
+      >
+        <ArrowLeft size={17} />
+        Back to Members
+      </button>
 
       {/* Member Header */}
       <div className="card">
-        <div className="flex items-start space-x-6">
+        <div className="flex flex-col sm:flex-row items-start gap-6">
           {member.photoUrl ? (
             <img
               src={member.photoUrl}
               alt={member.fullName}
-              className="w-32 h-32 rounded-lg object-cover"
+              className="w-28 h-28 rounded-2xl object-cover shrink-0"
             />
           ) : (
-            <div className="w-32 h-32 rounded-lg bg-gray-300 flex items-center justify-center">
-              <span className="text-4xl text-gray-600 font-bold">
-                {member.fullName.charAt(0)}
-              </span>
+            <div className="avatar-fallback w-28 h-28 text-4xl rounded-2xl shrink-0">
+              {member.fullName.charAt(0)}
             </div>
           )}
 
-          <div className="flex-1">
-            <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">{member.fullName}</h1>
-                <p className="text-gray-500 mt-1">{member.membershipId}</p>
+                <h1 className="text-2xl font-bold text-white tracking-tight">{member.fullName}</h1>
+                <p className="text-ink-400 mt-1">{member.membershipId}</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                member.isActive 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'bg-gray-100 text-gray-700'
-              }`}>
+              <span className={member.isActive ? 'badge-success' : 'badge-neutral'}>
                 {member.isActive ? 'Active' : 'Inactive'}
               </span>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
               {member.phoneNumber && (
-                <div className="flex items-center text-gray-600">
-                  <Phone size={18} className="mr-3" />
+                <div className="flex items-center text-sm text-ink-300">
+                  <Phone size={16} className="mr-2.5 text-ink-500" />
                   {member.phoneNumber}
                 </div>
               )}
               {member.email && (
-                <div className="flex items-center text-gray-600">
-                  <Mail size={18} className="mr-3" />
+                <div className="flex items-center text-sm text-ink-300">
+                  <Mail size={16} className="mr-2.5 text-ink-500" />
                   {member.email}
                 </div>
               )}
               {member.address && (
-                <div className="flex items-center text-gray-600">
-                  <MapPin size={18} className="mr-3" />
+                <div className="flex items-center text-sm text-ink-300">
+                  <MapPin size={16} className="mr-2.5 text-ink-500" />
                   {member.address}
                 </div>
               )}
-              <div className="flex items-center text-gray-600">
-                <Calendar size={18} className="mr-3" />
+              <div className="flex items-center text-sm text-ink-300">
+                <Calendar size={16} className="mr-2.5 text-ink-500" />
                 Joined {format(new Date(member.joiningDate), 'MMM dd, yyyy')}
               </div>
             </div>
@@ -115,136 +106,138 @@ const MemberDetails = () => {
 
       {/* Current Membership */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Current Membership</h2>
-          <button 
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-white">Current Membership</h2>
+          <button
             onClick={() => setShowMembershipModal(true)}
-            className="btn-primary flex items-center space-x-2 text-sm"
+            className="btn-secondary text-sm !py-2"
           >
-            <Plus size={16} />
-            <span>Add/Renew</span>
+            <Plus size={15} />
+            <span>Add / Renew</span>
           </button>
         </div>
 
         {latestMembership ? (
-          <div className="p-4 bg-primary-50 rounded-lg">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-5 bg-black/30 border border-white/10 rounded-2xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               <div>
-                <p className="text-sm text-gray-600">Plan</p>
-                <p className="font-bold text-gray-900">{latestMembership.planName}</p>
+                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Plan</p>
+                <p className="font-bold text-white mt-1.5">{latestMembership.planName}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Duration</p>
-                <p className="font-bold text-gray-900">{latestMembership.planDuration} days</p>
+                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Duration</p>
+                <p className="font-bold text-white mt-1.5">{latestMembership.planDuration} days</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">End Date</p>
-                <p className="font-bold text-gray-900">
+                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">End Date</p>
+                <p className="font-bold text-white mt-1.5">
                   {format(new Date(latestMembership.endDate), 'MMM dd, yyyy')}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Amount</p>
-                <p className="font-bold text-primary-600">
-                  ${parseFloat(latestMembership.planAmount).toFixed(2)}
+                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Amount</p>
+                <p className="font-bold text-primary-400 mt-1.5">
+                  {formatINR(latestMembership.planAmount)}
                 </p>
               </div>
             </div>
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-8">No active membership</p>
+          <p className="text-ink-400 text-center py-10 text-sm">No active membership</p>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Payment History */}
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Payment History</h2>
-            <button 
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold text-white">Payment History</h2>
+            <button
               onClick={() => setShowPaymentModal(true)}
-              className="btn-primary flex items-center space-x-2 text-sm"
+              className="btn-secondary text-sm !py-2"
             >
-              <Plus size={16} />
+              <Plus size={15} />
               <span>Add Payment</span>
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-1">
             {member.payments?.length > 0 ? (
               member.payments.slice(0, 5).map((payment) => (
-                <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      ${parseFloat(payment.amount).toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(payment.paymentDate), 'MMM dd, yyyy')}
-                    </p>
+                <div key={payment.id} className="flex items-center justify-between p-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-9 h-9 rounded-full bg-emerald-500/15 text-emerald-400 shrink-0">
+                      <CreditCard size={15} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-white">
+                        {formatINR(payment.amount)}
+                      </p>
+                      <p className="text-sm text-ink-400">
+                        {format(new Date(payment.paymentDate), 'MMM dd, yyyy')}
+                      </p>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm capitalize text-gray-700">{payment.paymentMethod}</p>
+                    <p className="text-sm capitalize text-ink-300 font-medium">{payment.paymentMethod}</p>
                     {payment.remarks && (
-                      <p className="text-xs text-gray-500">{payment.remarks}</p>
+                      <p className="text-xs text-ink-500 max-w-[10rem] truncate">{payment.remarks}</p>
                     )}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 text-center py-8">No payment history</p>
+              <p className="text-ink-400 text-center py-10 text-sm">No payment history</p>
             )}
           </div>
         </div>
 
         {/* Attendance */}
         <div className="card">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Attendance</h2>
-          
-          <div className="space-y-3">
+          <h2 className="text-lg font-bold text-white mb-5">Recent Attendance</h2>
+
+          <div className="space-y-1">
             {member.attendance?.length > 0 ? (
               member.attendance.map((record) => (
-                <div key={record.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="text-green-600" size={20} />
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {format(new Date(record.checkInTime), 'MMM dd, yyyy')}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {format(new Date(record.checkInTime), 'hh:mm a')}
-                        {record.checkOutTime && ` - ${format(new Date(record.checkOutTime), 'hh:mm a')}`}
-                      </p>
-                    </div>
+                <div key={record.id} className="flex items-center gap-3 p-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors">
+                  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-sky-500/15 text-sky-400 shrink-0">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-white">
+                      {format(new Date(record.checkInTime), 'MMM dd, yyyy')}
+                    </p>
+                    <p className="text-sm text-ink-400">
+                      {format(new Date(record.checkInTime), 'hh:mm a')}
+                      {record.checkOutTime && ` – ${format(new Date(record.checkOutTime), 'hh:mm a')}`}
+                    </p>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-gray-500 text-center py-8">No attendance records</p>
+              <p className="text-ink-400 text-center py-10 text-sm">No attendance records</p>
             )}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Total Visits:</span>
-              <span className="font-bold text-primary-600 text-xl">
-                {member.attendance?.length || 0}
-              </span>
-            </div>
+          <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+            <span className="text-sm text-ink-400">Total Visits</span>
+            <span className="font-bold text-white text-xl">
+              {member.attendance?.length || 0}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Modals would go here - simplified for now */}
       {showMembershipModal && (
-        <MembershipModal 
+        <MembershipModal
           memberId={id}
           onClose={() => setShowMembershipModal(false)}
           onSuccess={fetchMemberDetails}
         />
       )}
-      
+
       {showPaymentModal && (
-        <PaymentModal 
+        <PaymentModal
           memberId={id}
           onClose={() => setShowPaymentModal(false)}
           onSuccess={fetchMemberDetails}
@@ -259,7 +252,7 @@ const MembershipModal = ({ memberId, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     planName: 'Monthly',
     planDuration: '30',
-    planAmount: '50',
+    planAmount: '1800',
     startDate: new Date().toISOString().split('T')[0]
   });
   const [loading, setLoading] = useState(false);
@@ -281,9 +274,14 @@ const MembershipModal = ({ memberId, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Add Membership</h3>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold text-white">Add Membership</h3>
+          <button onClick={onClose} className="text-ink-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">Plan Name</label>
@@ -293,10 +291,10 @@ const MembershipModal = ({ memberId, onClose, onSuccess }) => {
               onChange={(e) => {
                 const plan = e.target.value;
                 let duration = '30';
-                let amount = '50';
-                if (plan === 'Quarterly') { duration = '90'; amount = '135'; }
-                if (plan === 'Half-Yearly') { duration = '180'; amount = '250'; }
-                if (plan === 'Yearly') { duration = '365'; amount = '480'; }
+                let amount = '1800';
+                if (plan === 'Quarterly') { duration = '90'; amount = '4800'; }
+                if (plan === 'Half-Yearly') { duration = '180'; amount = '8500'; }
+                if (plan === 'Yearly') { duration = '365'; amount = '15000'; }
                 setFormData({ ...formData, planName: plan, planDuration: duration, planAmount: amount });
               }}
             >
@@ -317,7 +315,7 @@ const MembershipModal = ({ memberId, onClose, onSuccess }) => {
             />
           </div>
           <div>
-            <label className="label">Amount ($)</label>
+            <label className="label">Amount (₹)</label>
             <input
               type="number"
               step="0.01"
@@ -337,7 +335,7 @@ const MembershipModal = ({ memberId, onClose, onSuccess }) => {
               required
             />
           </div>
-          <div className="flex space-x-2">
+          <div className="flex gap-2 pt-1">
             <button type="submit" disabled={loading} className="flex-1 btn-primary">
               {loading ? 'Adding...' : 'Add Membership'}
             </button>
@@ -378,12 +376,17 @@ const PaymentModal = ({ memberId, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Record Payment</h3>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold text-white">Record Payment</h3>
+          <button onClick={onClose} className="text-ink-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="label">Amount ($)</label>
+            <label className="label">Amount (₹)</label>
             <input
               type="number"
               step="0.01"
@@ -425,7 +428,7 @@ const PaymentModal = ({ memberId, onClose, onSuccess }) => {
               onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
             />
           </div>
-          <div className="flex space-x-2">
+          <div className="flex gap-2 pt-1">
             <button type="submit" disabled={loading} className="flex-1 btn-primary">
               {loading ? 'Recording...' : 'Record Payment'}
             </button>

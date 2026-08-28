@@ -1,27 +1,46 @@
-import { useState, useEffect } from 'react';
-import { Calendar, CheckCircle, Search } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Calendar, CheckCircle2, Clock, Users, X, QrCode, Copy } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { useAuth } from '../context/AuthContext';
+import QRCode from '../components/QRCode';
+
+const POLL_INTERVAL = 8000;
 
 const Attendance = () => {
+  const { user } = useAuth();
   const [attendance, setAttendance] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMember, setSelectedMember] = useState('');
   const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const prevCountRef = useRef(0);
+
+  const checkInUrl = `${window.location.origin}/checkin/${user?.id}`;
 
   useEffect(() => {
     fetchTodayAttendance();
     fetchMembers();
+
+    const interval = setInterval(() => fetchTodayAttendance(true), POLL_INTERVAL);
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchTodayAttendance = async () => {
+  const fetchTodayAttendance = async (silent = false) => {
     try {
       const response = await axios.get('/api/attendance/today');
-      setAttendance(response.data.attendance);
+      const next = response.data.attendance;
+
+      if (silent && prevCountRef.current && next.length > prevCountRef.current) {
+        const newest = next[0];
+        toast.success(`${newest.member.fullName} just checked in`, { icon: '👋' });
+      }
+      prevCountRef.current = next.length;
+      setAttendance(next);
     } catch (error) {
-      toast.error('Failed to fetch attendance');
+      if (!silent) toast.error('Failed to fetch attendance');
     } finally {
       setLoading(false);
     }
@@ -42,100 +61,137 @@ const Attendance = () => {
       toast.success('Check-in recorded successfully!');
       fetchTodayAttendance();
       setShowCheckInModal(false);
+      setSelectedMember('');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to record check-in');
     }
   };
 
+  const copyCheckInLink = () => {
+    navigator.clipboard.writeText(checkInUrl);
+    toast.success('Link copied');
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="spinner w-12 h-12"></div>
     </div>;
   }
 
+  const stillIn = attendance.filter((a) => !a.checkOutTime).length;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Attendance</h1>
-          <p className="text-gray-600 mt-2">Today's check-ins and member attendance</p>
+          <h1 className="page-title">Attendance</h1>
+          <p className="page-subtitle">Today's check-ins and member attendance</p>
         </div>
-        
-        <button 
-          onClick={() => setShowCheckInModal(true)}
-          className="btn-primary flex items-center space-x-2"
-        >
-          <CheckCircle size={20} />
-          <span>Check-in Member</span>
-        </button>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowQrModal(true)}
+            className="btn-secondary"
+          >
+            <QrCode size={18} />
+            <span>Check-in QR</span>
+          </button>
+          <button
+            onClick={() => setShowCheckInModal(true)}
+            className="btn-primary"
+          >
+            <CheckCircle2 size={18} />
+            <span>Check-in Member</span>
+          </button>
+        </div>
       </div>
 
       {/* Today's Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="card bg-gradient-to-r from-primary-500 to-primary-600 text-white">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="card bg-gradient-to-br from-ink-950 to-ink-900 border-none">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-primary-100">Today's Check-ins</p>
-              <p className="text-4xl font-bold mt-2">{attendance.length}</p>
+              <p className="text-ink-400 text-sm">Today's Check-ins</p>
+              <p className="text-3xl font-bold text-white mt-2 tracking-tight">{attendance.length}</p>
+              <p className="text-primary-400 text-xs mt-2 font-medium">{stillIn} currently in gym</p>
             </div>
-            <Calendar size={48} className="text-primary-200 opacity-50" />
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary-500/15 ring-1 ring-primary-400/25">
+              <Calendar size={22} className="text-primary-400" />
+            </div>
           </div>
         </div>
 
         <div className="card">
-          <p className="text-gray-600 text-sm">Current Time</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">
-            {format(new Date(), 'hh:mm a')}
-          </p>
-          <p className="text-gray-500 text-sm mt-1">
-            {format(new Date(), 'EEEE, MMM dd, yyyy')}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-ink-400 text-sm">Current Time</p>
+              <p className="text-2xl font-bold text-white mt-2">
+                {format(new Date(), 'hh:mm a')}
+              </p>
+              <p className="text-ink-500 text-sm mt-1">
+                {format(new Date(), 'EEEE, MMM dd')}
+              </p>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-sky-500/15 text-sky-400">
+              <Clock size={22} />
+            </div>
+          </div>
         </div>
 
         <div className="card">
-          <p className="text-gray-600 text-sm">Active Members</p>
-          <p className="text-2xl font-bold text-gray-900 mt-2">
-            {members.length}
-          </p>
-          <p className="text-gray-500 text-sm mt-1">Total active members</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-ink-400 text-sm">Active Members</p>
+              <p className="text-2xl font-bold text-white mt-2">{members.length}</p>
+              <p className="text-ink-500 text-sm mt-1">Total active members</p>
+            </div>
+            <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-400">
+              <Users size={22} />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Attendance List */}
       <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Today's Attendance</h2>
-        
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-white">Today's Attendance</h2>
+          <span className="flex items-center gap-1.5 text-xs text-ink-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            Live
+          </span>
+        </div>
+
         {attendance.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-1">
             {attendance.map((record) => (
-              <div key={record.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div className="flex items-center space-x-4">
+              <div key={record.id} className="flex items-center justify-between p-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3">
                   {record.member.photoUrl ? (
                     <img
                       src={record.member.photoUrl}
                       alt={record.member.fullName}
-                      className="w-12 h-12 rounded-full object-cover"
+                      className="w-11 h-11 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-gray-600 font-bold">
-                        {record.member.fullName.charAt(0)}
-                      </span>
+                    <div className="avatar-fallback w-11 h-11">
+                      {record.member.fullName.charAt(0)}
                     </div>
                   )}
-                  
+
                   <div>
-                    <h3 className="font-medium text-gray-900">{record.member.fullName}</h3>
-                    <p className="text-sm text-gray-500">{record.member.membershipId}</p>
+                    <h3 className="font-medium text-white">{record.member.fullName}</h3>
+                    <p className="text-sm text-ink-400">{record.member.membershipId}</p>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="flex items-center text-green-600">
-                    <CheckCircle size={16} className="mr-2" />
-                    <span className="font-medium">Checked In</span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">
+                  {record.checkOutTime ? (
+                    <span className="badge-neutral">Checked Out</span>
+                  ) : (
+                    <span className="badge-success">In Gym</span>
+                  )}
+                  <p className="text-sm text-ink-500 mt-1.5">
                     {format(new Date(record.checkInTime), 'hh:mm a')}
                   </p>
                 </div>
@@ -143,28 +199,62 @@ const Attendance = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <Calendar className="mx-auto text-gray-400 mb-4" size={64} />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No Check-ins Yet</h3>
-            <p className="text-gray-600 mb-4">Start recording attendance for today</p>
-            <button 
+          <div className="text-center py-16">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+              <Calendar className="text-ink-500" size={26} />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-1">No Check-ins Yet</h3>
+            <p className="text-ink-400 mb-5">Start recording attendance for today</p>
+            <button
               onClick={() => setShowCheckInModal(true)}
-              className="btn-primary inline-flex items-center space-x-2"
+              className="btn-primary inline-flex"
             >
-              <CheckCircle size={20} />
+              <CheckCircle2 size={18} />
               <span>Check-in First Member</span>
             </button>
           </div>
         )}
       </div>
 
+      {/* Check-in QR Modal */}
+      {showQrModal && (
+        <div className="modal-backdrop" onClick={() => setShowQrModal(false)}>
+          <div className="modal-panel text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-white">Member Self Check-in</h3>
+              <button onClick={() => setShowQrModal(false)} className="text-ink-500 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-ink-400 mb-5">
+              Print this and put it up at the entrance. Members scan it with their phone camera to check themselves in.
+            </p>
+            <div className="bg-white p-4 rounded-2xl inline-block">
+              <QRCode value={checkInUrl} size={220} />
+            </div>
+            <button
+              onClick={copyCheckInLink}
+              className="btn-secondary w-full mt-5 text-sm"
+            >
+              <Copy size={15} />
+              Copy Link
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Check-in Modal */}
       {showCheckInModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Check-in Member</h3>
-            
-            <div className="mb-4">
+        <div className="modal-backdrop" onClick={() => setShowCheckInModal(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-white">Check-in Member</h3>
+              <button onClick={() => setShowCheckInModal(false)} className="text-ink-500 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mb-5">
               <label className="label">Select Member</label>
               <select
                 className="input"
@@ -180,7 +270,7 @@ const Attendance = () => {
               </select>
             </div>
 
-            <div className="flex space-x-2">
+            <div className="flex gap-2">
               <button
                 onClick={() => handleCheckIn(selectedMember)}
                 disabled={!selectedMember}

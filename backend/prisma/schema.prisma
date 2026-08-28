@@ -17,10 +17,43 @@ model GymOwner {
   gymAddress   String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  
-  members      Member[]
-  
+
+  isSuperAdmin     Boolean   @default(false)
+  licenseStatus    String    @default("trial") // trial, active, expired, suspended
+  licensePlan      String    @default("Monthly")
+  licenseAmount    Decimal   @default(999) @db.Decimal(10, 2)
+  licenseExpiresAt DateTime?
+
+  members         Member[]
+  licensePayments LicensePayment[]
+
   @@map("gym_owners")
+}
+
+model LicensePayment {
+  id         String   @id @default(uuid())
+  amount     Decimal  @db.Decimal(10, 2)
+  periodDays Int      @default(30)
+  paidAt     DateTime @default(now())
+
+  gymOwnerId String
+  gymOwner   GymOwner @relation(fields: [gymOwnerId], references: [id], onDelete: Cascade)
+
+  @@map("license_payments")
+  @@index([gymOwnerId])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  action       String   // e.g. "license.extend", "license.suspend", "license.activate"
+  targetGymId  String?
+  targetGymName String?
+  actorEmail   String
+  details      String?
+  createdAt    DateTime @default(now())
+
+  @@map("audit_logs")
+  @@index([createdAt])
 }
 
 model Member {

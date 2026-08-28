@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Users, Phone, Mail } from 'lucide-react';
+import { Plus, Search, Users, Phone, Mail, Activity, Download } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
+import { downloadCSV } from '../utils/csv';
 
 const Members = () => {
   const [members, setMembers] = useState([]);
@@ -19,7 +20,7 @@ const Members = () => {
     try {
       const params = {};
       if (statusFilter !== 'all') params.status = statusFilter;
-      
+
       const response = await axios.get('/api/members', { params });
       setMembers(response.data.members);
     } catch (error) {
@@ -35,9 +36,27 @@ const Members = () => {
     member.phoneNumber.includes(searchTerm)
   );
 
+  const handleExport = () => {
+    downloadCSV(
+      `members-${format(new Date(), 'yyyy-MM-dd')}.csv`,
+      ['Name', 'Membership ID', 'Phone', 'Email', 'Status', 'Plan', 'Expires', 'Total Visits'],
+      filteredMembers.map((m) => [
+        m.fullName,
+        m.membershipId,
+        m.phoneNumber,
+        m.email || '',
+        m.isActive ? 'Active' : 'Inactive',
+        m.memberships[0]?.planName || '',
+        m.memberships[0] ? format(new Date(m.memberships[0].endDate), 'yyyy-MM-dd') : '',
+        m._count?.attendance || 0
+      ])
+    );
+    toast.success('Members exported');
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="spinner w-12 h-12"></div>
     </div>;
   }
 
@@ -45,21 +64,27 @@ const Members = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Members</h1>
-          <p className="text-gray-600 mt-2">Manage your gym members</p>
+          <h1 className="page-title">Members</h1>
+          <p className="page-subtitle">Manage your gym members</p>
         </div>
-        
-        <Link to="/members/add" className="btn-primary flex items-center space-x-2">
-          <Plus size={20} />
-          <span>Add Member</span>
-        </Link>
+
+        <div className="flex gap-2">
+          <button onClick={handleExport} className="btn-secondary" disabled={filteredMembers.length === 0}>
+            <Download size={18} />
+            <span>Export CSV</span>
+          </button>
+          <Link to="/members/add" className="btn-primary">
+            <Plus size={18} />
+            <span>Add Member</span>
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="card">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="card !p-4">
+        <div className="flex flex-col md:flex-row gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500" size={18} />
             <input
               type="text"
               placeholder="Search by name, ID, or phone..."
@@ -68,7 +93,7 @@ const Members = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -83,77 +108,74 @@ const Members = () => {
 
       {/* Members Grid */}
       {filteredMembers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMembers.map((member) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredMembers.map((member, index) => {
             const latestMembership = member.memberships[0];
-            const isExpiringSoon = latestMembership && 
+            const isExpiringSoon = latestMembership &&
               new Date(latestMembership.endDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
             return (
-              <Link 
-                key={member.id} 
+              <Link
+                key={member.id}
                 to={`/members/${member.id}`}
-                className="card hover:shadow-md transition-shadow"
+                className="card card-hover animate-fade-up"
+                style={{ animationDelay: `${Math.min(index, 10) * 40}ms` }}
               >
-                <div className="flex items-start space-x-4">
+                <div className="flex items-start gap-4">
                   {member.photoUrl ? (
                     <img
                       src={member.photoUrl}
                       alt={member.fullName}
-                      className="w-16 h-16 rounded-full object-cover"
+                      className="w-14 h-14 rounded-full object-cover shrink-0"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center">
-                      <span className="text-2xl text-gray-600 font-bold">
-                        {member.fullName.charAt(0)}
-                      </span>
+                    <div className="avatar-fallback w-14 h-14 text-lg shrink-0">
+                      {member.fullName.charAt(0)}
                     </div>
                   )}
 
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-bold text-gray-900">{member.fullName}</h3>
-                        <p className="text-sm text-gray-500">{member.membershipId}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-white truncate">{member.fullName}</h3>
+                        <p className="text-sm text-ink-400">{member.membershipId}</p>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        member.isActive 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-gray-100 text-gray-700'
-                      }`}>
+                      <span className={member.isActive ? 'badge-success shrink-0' : 'badge-neutral shrink-0'}>
                         {member.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
-                    <div className="mt-3 space-y-1">
+                    <div className="mt-3 space-y-1.5">
                       {member.phoneNumber && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Phone size={14} className="mr-2" />
+                        <div className="flex items-center text-sm text-ink-400">
+                          <Phone size={13} className="mr-2 text-ink-500" />
                           {member.phoneNumber}
                         </div>
                       )}
                       {member.email && (
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Mail size={14} className="mr-2" />
-                          {member.email}
+                        <div className="flex items-center text-sm text-ink-400 truncate">
+                          <Mail size={13} className="mr-2 text-ink-500 shrink-0" />
+                          <span className="truncate">{member.email}</span>
                         </div>
                       )}
                     </div>
 
                     {latestMembership && (
-                      <div className={`mt-3 p-2 rounded text-xs ${
-                        isExpiringSoon 
-                          ? 'bg-yellow-50 text-yellow-700' 
-                          : 'bg-gray-50 text-gray-700'
+                      <div className={`mt-3 px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+                        isExpiringSoon
+                          ? 'bg-amber-500/15 text-amber-400'
+                          : 'bg-white/5 text-ink-300'
                       }`}>
-                        {latestMembership.planName} - 
-                        Expires {format(new Date(latestMembership.endDate), 'MMM dd, yyyy')}
+                        {latestMembership.planName} · Expires {format(new Date(latestMembership.endDate), 'MMM dd, yyyy')}
                       </div>
                     )}
 
-                    <div className="mt-3 flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Attendance:</span>
-                      <span className="font-medium">{member._count?.attendance || 0} visits</span>
+                    <div className="mt-3 flex items-center justify-between text-sm pt-3 border-t border-white/10">
+                      <span className="text-ink-400 flex items-center gap-1.5">
+                        <Activity size={13} />
+                        Attendance
+                      </span>
+                      <span className="font-semibold text-white">{member._count?.attendance || 0} visits</span>
                     </div>
                   </div>
                 </div>
@@ -162,17 +184,19 @@ const Members = () => {
           })}
         </div>
       ) : (
-        <div className="card text-center py-12">
-          <Users className="mx-auto text-gray-400 mb-4" size={64} />
-          <h3 className="text-xl font-medium text-gray-900 mb-2">No Members Found</h3>
-          <p className="text-gray-600 mb-4">
-            {searchTerm 
-              ? 'Try adjusting your search criteria' 
+        <div className="card text-center py-16">
+          <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+            <Users className="text-ink-500" size={26} />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-1">No Members Found</h3>
+          <p className="text-ink-400 mb-5">
+            {searchTerm
+              ? 'Try adjusting your search criteria'
               : 'Get started by adding your first member'}
           </p>
           {!searchTerm && (
-            <Link to="/members/add" className="btn-primary inline-flex items-center space-x-2">
-              <Plus size={20} />
+            <Link to="/members/add" className="btn-primary inline-flex">
+              <Plus size={18} />
               <span>Add First Member</span>
             </Link>
           )}
