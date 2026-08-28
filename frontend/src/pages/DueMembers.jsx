@@ -34,7 +34,7 @@ const DueMembers = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="page-title">Due Members</h1>
           <p className="page-subtitle">Members with expiring or expired memberships</p>
@@ -43,7 +43,7 @@ const DueMembers = () => {
         <select
           value={daysFilter}
           onChange={(e) => setDaysFilter(Number(e.target.value))}
-          className="input w-48"
+          className="input w-full sm:w-48"
         >
           <option value={3}>Next 3 days</option>
           <option value={7}>Next 7 days</option>

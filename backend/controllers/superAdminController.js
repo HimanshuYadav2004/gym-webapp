@@ -15,7 +15,7 @@ export const getPlatformStats = async (req, res) => {
       prisma.licensePayment.aggregate({ _sum: { amount: true } })
     ]);
 
-    const byStatus = { trial: 0, active: 0, expired: 0, suspended: 0 };
+    const byStatus = { pending: 0, trial: 0, active: 0, expired: 0, suspended: 0, rejected: 0 };
     statusCounts.forEach((s) => {
       byStatus[s.licenseStatus] = s._count._all;
     });
@@ -157,6 +157,12 @@ export const updateGymLicense = async (req, res) => {
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + 30);
       data = { licenseStatus: 'active', licenseExpiresAt: newExpiry };
+    } else if (action === 'approve') {
+      const trialExpiry = new Date();
+      trialExpiry.setDate(trialExpiry.getDate() + 14);
+      data = { licenseStatus: 'trial', licenseExpiresAt: trialExpiry };
+    } else if (action === 'reject') {
+      data = { licenseStatus: 'rejected' };
     } else {
       return res.status(400).json({ error: 'Invalid action' });
     }

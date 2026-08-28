@@ -7,7 +7,8 @@ import { format } from 'date-fns';
 
 const statusBadge = (status, expiresAt) => {
   const expired = expiresAt && new Date(expiresAt) < new Date();
-  if (status === 'suspended') return 'badge-danger';
+  if (status === 'pending') return 'badge-warning';
+  if (status === 'rejected' || status === 'suspended') return 'badge-danger';
   if (expired) return 'badge-danger';
   if (status === 'trial') return 'badge-info';
   return 'badge-success';
@@ -15,6 +16,8 @@ const statusBadge = (status, expiresAt) => {
 
 const statusLabel = (status, expiresAt) => {
   const expired = expiresAt && new Date(expiresAt) < new Date();
+  if (status === 'pending') return 'Pending';
+  if (status === 'rejected') return 'Rejected';
   if (status === 'suspended') return 'Suspended';
   if (expired) return 'Expired';
   if (status === 'trial') return 'Trial';

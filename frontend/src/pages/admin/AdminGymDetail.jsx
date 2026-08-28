@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt
+  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt, Check, X
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -52,6 +52,8 @@ const AdminGymDetail = () => {
 
   const isExpired = gym.licenseExpiresAt && new Date(gym.licenseExpiresAt) < new Date();
   const isSuspended = gym.licenseStatus === 'suspended';
+  const isPending = gym.licenseStatus === 'pending';
+  const isRejected = gym.licenseStatus === 'rejected';
 
   return (
     <div className="space-y-6">
@@ -66,8 +68,13 @@ const AdminGymDetail = () => {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-white tracking-tight">{gym.gymName}</h1>
-              <span className={isSuspended || isExpired ? 'badge-danger' : gym.licenseStatus === 'trial' ? 'badge-info' : 'badge-success'}>
-                {isSuspended ? 'Suspended' : isExpired ? 'Expired' : gym.licenseStatus === 'trial' ? 'Trial' : 'Active'}
+              <span className={
+                isPending ? 'badge-warning'
+                : (isRejected || isSuspended || isExpired) ? 'badge-danger'
+                : gym.licenseStatus === 'trial' ? 'badge-info'
+                : 'badge-success'
+              }>
+                {isPending ? 'Pending' : isRejected ? 'Rejected' : isSuspended ? 'Suspended' : isExpired ? 'Expired' : gym.licenseStatus === 'trial' ? 'Trial' : 'Active'}
               </span>
             </div>
             <p className="text-ink-400 mt-1">Owned by {gym.fullName}</p>
@@ -120,23 +127,43 @@ const AdminGymDetail = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => handleAction('extend', 30)} disabled={actionLoading} className="btn-primary text-sm">
-            <ShieldPlus size={16} />
-            Extend 30 Days
-          </button>
-          {!isSuspended ? (
-            <button onClick={() => handleAction('suspend')} disabled={actionLoading} className="btn-danger text-sm">
-              <ShieldOff size={16} />
-              Suspend Access
+        {isPending ? (
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => handleAction('approve')} disabled={actionLoading} className="btn-primary text-sm">
+              <Check size={16} />
+              Approve Gym
             </button>
-          ) : (
-            <button onClick={() => handleAction('activate')} disabled={actionLoading} className="btn-secondary text-sm">
-              <ShieldCheck size={16} />
-              Reactivate
+            <button onClick={() => handleAction('reject')} disabled={actionLoading} className="btn-danger text-sm">
+              <X size={16} />
+              Reject
             </button>
-          )}
-        </div>
+          </div>
+        ) : isRejected ? (
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => handleAction('approve')} disabled={actionLoading} className="btn-primary text-sm">
+              <Check size={16} />
+              Approve Anyway
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => handleAction('extend', 30)} disabled={actionLoading} className="btn-primary text-sm">
+              <ShieldPlus size={16} />
+              Extend 30 Days
+            </button>
+            {!isSuspended ? (
+              <button onClick={() => handleAction('suspend')} disabled={actionLoading} className="btn-danger text-sm">
+                <ShieldOff size={16} />
+                Suspend Access
+              </button>
+            ) : (
+              <button onClick={() => handleAction('activate')} disabled={actionLoading} className="btn-secondary text-sm">
+                <ShieldCheck size={16} />
+                Reactivate
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -26,8 +26,8 @@ const Register = () => {
     try {
       const response = await axios.post('/api/auth/register', formData);
       login(response.data.token, response.data.gymOwner);
-      toast.success('Registration successful!');
-      navigate('/dashboard');
+      toast.success('Registration submitted — awaiting approval!');
+      navigate('/pending-approval');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Registration failed');
     } finally {

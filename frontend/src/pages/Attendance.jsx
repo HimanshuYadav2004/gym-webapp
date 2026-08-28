@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckCircle2, Clock, Users, X, QrCode, Copy } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Users, X, QrCode, Copy, LogOut } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -64,6 +64,16 @@ const Attendance = () => {
       setSelectedMember('');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to record check-in');
+    }
+  };
+
+  const handleCheckOut = async (attendanceId) => {
+    try {
+      await axios.post('/api/attendance/checkout', { attendanceId });
+      toast.success('Checked out');
+      fetchTodayAttendance();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to check out');
     }
   };
 
@@ -165,35 +175,48 @@ const Attendance = () => {
         {attendance.length > 0 ? (
           <div className="space-y-1">
             {attendance.map((record) => (
-              <div key={record.id} className="flex items-center justify-between p-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-3">
+              <div key={record.id} className="flex flex-wrap items-center justify-between gap-3 p-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
                   {record.member.photoUrl ? (
                     <img
                       src={record.member.photoUrl}
                       alt={record.member.fullName}
-                      className="w-11 h-11 rounded-full object-cover"
+                      className="w-11 h-11 rounded-full object-cover shrink-0"
                     />
                   ) : (
-                    <div className="avatar-fallback w-11 h-11">
+                    <div className="avatar-fallback w-11 h-11 shrink-0">
                       {record.member.fullName.charAt(0)}
                     </div>
                   )}
 
-                  <div>
-                    <h3 className="font-medium text-white">{record.member.fullName}</h3>
+                  <div className="min-w-0">
+                    <h3 className="font-medium text-white truncate">{record.member.fullName}</h3>
                     <p className="text-sm text-ink-400">{record.member.membershipId}</p>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  {record.checkOutTime ? (
-                    <span className="badge-neutral">Checked Out</span>
-                  ) : (
-                    <span className="badge-success">In Gym</span>
+                <div className="flex items-center gap-3 shrink-0 ml-auto">
+                  <div className="text-right">
+                    {record.checkOutTime ? (
+                      <span className="badge-neutral">Checked Out</span>
+                    ) : (
+                      <span className="badge-success">In Gym</span>
+                    )}
+                    <p className="text-sm text-ink-500 mt-1.5">
+                      {format(new Date(record.checkInTime), 'hh:mm a')}
+                      {record.checkOutTime && ` – ${format(new Date(record.checkOutTime), 'hh:mm a')}`}
+                    </p>
+                  </div>
+                  {!record.checkOutTime && (
+                    <button
+                      onClick={() => handleCheckOut(record.id)}
+                      className="btn-secondary !py-1.5 !px-3 text-xs"
+                      title="Check out"
+                    >
+                      <LogOut size={13} />
+                      <span className="hidden sm:inline">Check Out</span>
+                    </button>
                   )}
-                  <p className="text-sm text-ink-500 mt-1.5">
-                    {format(new Date(record.checkInTime), 'hh:mm a')}
-                  </p>
                 </div>
               </div>
             ))}

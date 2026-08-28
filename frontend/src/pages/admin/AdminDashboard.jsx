@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Users, IndianRupee, ShieldCheck, ArrowRight, AlertTriangle, ShieldPlus, ShieldOff, History } from 'lucide-react';
+import { Building2, Users, IndianRupee, ShieldCheck, ArrowRight, AlertTriangle, ShieldPlus, ShieldOff, History, UserCheck, Check, X, Mail, Phone } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -9,19 +9,43 @@ import { formatINR } from '../../utils/currency';
 import CountUp from '../../components/CountUp';
 import SpotlightCard from '../../components/SpotlightCard';
 
+const POLL_INTERVAL = 7000;
 const countFormat = (n) => Math.round(n).toLocaleString('en-IN');
 
 const actionMeta = {
   'license.extend': { label: 'Extended license', icon: ShieldPlus, chip: 'bg-emerald-500/15 text-emerald-400' },
   'license.suspend': { label: 'Suspended access', icon: ShieldOff, chip: 'bg-rose-500/15 text-rose-400' },
   'license.activate': { label: 'Reactivated', icon: ShieldCheck, chip: 'bg-sky-500/15 text-sky-400' },
+  'license.approve': { label: 'Approved gym', icon: UserCheck, chip: 'bg-emerald-500/15 text-emerald-400' },
+  'license.reject': { label: 'Rejected gym', icon: X, chip: 'bg-rose-500/15 text-rose-400' },
 };
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [logs, setLogs] = useState([]);
+  const [pendingGyms, setPendingGyms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [actioningId, setActioningId] = useState(null);
+  const prevPendingRef = useRef(0);
+  const firstLoad = useRef(true);
+
+  const fetchPending = async () => {
+    try {
+      const res = await axios.get('/api/super-admin/gyms');
+      const pending = res.data.gyms.filter((g) => g.licenseStatus === 'pending');
+
+      if (!firstLoad.current && pending.length > prevPendingRef.current) {
+        const newest = pending[0];
+        toast.success(`New gym registration: ${newest.gymName}`, { icon: '🔔' });
+      }
+      firstLoad.current = false;
+      prevPendingRef.current = pending.length;
+      setPendingGyms(pending);
+    } catch {
+      // silent — this polls in the background
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -34,7 +58,25 @@ const AdminDashboard = () => {
       })
       .catch(() => toast.error('Failed to load platform stats'))
       .finally(() => setLoading(false));
+
+    fetchPending();
+    const interval = setInterval(fetchPending, POLL_INTERVAL);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleApproval = async (id, action) => {
+    setActioningId(id);
+    try {
+      await axios.patch(`/api/super-admin/gyms/${id}/license`, { action });
+      toast.success(action === 'approve' ? 'Gym approved' : 'Gym rejected');
+      fetchPending();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to update');
+    } finally {
+      setActioningId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -57,19 +99,70 @@ const AdminDashboard = () => {
     <div className="space-y-8">
       <div className="rounded-2xl overflow-hidden bg-ink-900 border border-white/10 animate-fade-up">
         <div className="hazard-stripe" />
-        <div className="p-8 md:p-10">
+        <div className="p-6 sm:p-8 md:p-10">
           <div className="flex items-center gap-2 mb-3">
             <span className="w-6 h-px bg-primary-500" />
             <p className="text-xs font-semibold text-primary-400 uppercase tracking-[0.2em]">
               Welcome, {user?.fullName?.split(' ')[0]}
             </p>
           </div>
-          <h1 className="font-display text-4xl md:text-5xl text-white uppercase tracking-wide leading-[0.95]">
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-white uppercase tracking-wide leading-[0.95]">
             Platform Overview
           </h1>
           <p className="text-ink-400 mt-3">Every gym running on GymFlow, in one place.</p>
         </div>
       </div>
+
+      {/* Pending Approvals — live */}
+      {pendingGyms.length > 0 && (
+        <div className="card !border-amber-500/30 animate-fade-up">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <UserCheck size={18} className="text-amber-400" />
+              <h2 className="text-lg font-bold text-white">Pending Approvals</h2>
+              <span className="badge-warning">{pendingGyms.length}</span>
+            </div>
+            <span className="flex items-center gap-1.5 text-xs text-ink-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {pendingGyms.map((g) => (
+              <div key={g.id} className="p-4 rounded-xl bg-black/30 border border-white/10 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-white">{g.gymName}</p>
+                  <p className="text-sm text-ink-400">{g.fullName}</p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-ink-500">
+                    <span className="flex items-center gap-1.5"><Mail size={12} />{g.email}</span>
+                    <span className="flex items-center gap-1.5"><Phone size={12} />{g.phoneNumber}</span>
+                    <span>Applied {formatDistanceToNow(new Date(g.createdAt), { addSuffix: true })}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => handleApproval(g.id, 'approve')}
+                    disabled={actioningId === g.id}
+                    className="btn-primary !py-2 !px-3.5 text-sm"
+                  >
+                    <Check size={15} />
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleApproval(g.id, 'reject')}
+                    disabled={actioningId === g.id}
+                    className="btn-danger !py-2 !px-3.5 text-sm"
+                  >
+                    <X size={15} />
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         {cards.map((c, i) => (
@@ -98,6 +191,7 @@ const AdminDashboard = () => {
             {[
               { label: 'Active', value: stats.byStatus.active, color: 'bg-emerald-500' },
               { label: 'Trial', value: stats.byStatus.trial, color: 'bg-sky-500' },
+              { label: 'Pending', value: stats.byStatus.pending, color: 'bg-amber-500' },
               { label: 'Expired', value: stats.byStatus.expired, color: 'bg-rose-500' },
               { label: 'Suspended', value: stats.byStatus.suspended, color: 'bg-ink-500' },
             ].map((s) => {

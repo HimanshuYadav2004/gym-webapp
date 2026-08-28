@@ -169,19 +169,32 @@ const CheckIn = () => {
         {step === 'done' && result && (
           <div className="card animate-fade-up text-center py-8">
             <div className={`flex items-center justify-center w-16 h-16 rounded-full mx-auto mb-5 ${
-              result.alreadyCheckedIn ? 'bg-sky-500/15 text-sky-400' : 'bg-emerald-500/15 text-emerald-400'
+              result.alreadyCheckedIn
+                ? (result.stillIn ? 'bg-sky-500/15 text-sky-400' : 'bg-amber-500/15 text-amber-400')
+                : 'bg-emerald-500/15 text-emerald-400'
             }`}>
               <CheckCircle2 size={32} />
             </div>
 
             {result.alreadyCheckedIn ? (
-              <>
-                <p className="font-display text-2xl text-white uppercase tracking-wide">Already In!</p>
-                <p className="text-ink-400 mt-2 text-sm">
-                  Hey {result.member.fullName.split(' ')[0]}, you checked in today at{' '}
-                  <span className="text-white font-medium">{format(new Date(result.checkInTime), 'hh:mm a')}</span>.
-                </p>
-              </>
+              result.stillIn ? (
+                <>
+                  <p className="font-display text-2xl text-white uppercase tracking-wide">Already In!</p>
+                  <p className="text-ink-400 mt-2 text-sm">
+                    Hey {result.member.fullName.split(' ')[0]}, you checked in today at{' '}
+                    <span className="text-white font-medium">{format(new Date(result.checkInTime), 'hh:mm a')}</span> and haven't checked out yet.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-display text-2xl text-white uppercase tracking-wide">Visit Complete</p>
+                  <p className="text-ink-400 mt-2 text-sm">
+                    {result.member.fullName.split(' ')[0]}, you already visited today from{' '}
+                    <span className="text-white font-medium">{format(new Date(result.checkInTime), 'hh:mm a')}</span> to{' '}
+                    <span className="text-white font-medium">{format(new Date(result.checkOutTime), 'hh:mm a')}</span>. See you tomorrow!
+                  </p>
+                </>
+              )
             ) : (
               <>
                 <p className="font-display text-2xl text-white uppercase tracking-wide">Checked In!</p>

@@ -108,20 +108,20 @@ const Dashboard = () => {
       {/* Hero header */}
       <div className="rounded-2xl overflow-hidden bg-ink-900 border border-white/10 animate-fade-up">
         <div className="hazard-stripe" />
-        <div className="p-8 md:p-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-          <div>
+        <div className="p-5 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-3">
-              <span className="w-6 h-px bg-primary-500" />
-              <p className="text-xs font-semibold text-primary-400 uppercase tracking-[0.2em]">
+              <span className="w-6 h-px bg-primary-500 shrink-0" />
+              <p className="text-xs font-semibold text-primary-400 uppercase tracking-[0.2em] truncate">
                 {greeting()}, {user?.fullName?.split(' ')[0]}
               </p>
             </div>
-            <h1 className="font-display text-4xl md:text-5xl text-white uppercase tracking-wide leading-[0.95]">
+            <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-white uppercase tracking-wide leading-[0.95] break-words">
               {user?.gymName || 'Your Gym'}
             </h1>
-            <p className="text-ink-400 mt-3">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+            <p className="text-ink-400 mt-3 text-sm sm:text-base">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
           </div>
-          <Link to="/members/add" className="btn-primary self-start md:self-auto">
+          <Link to="/members/add" className="btn-primary self-start md:self-auto shrink-0">
             <Users size={18} />
             Add New Member
           </Link>

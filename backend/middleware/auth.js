@@ -25,6 +25,14 @@ export const authMiddleware = async (req, res, next) => {
         return res.status(401).json({ error: 'Invalid or expired token' });
       }
 
+      if (owner.licenseStatus === 'pending') {
+        return res.status(403).json({ error: 'Your gym registration is awaiting approval', accountStatus: 'pending' });
+      }
+
+      if (owner.licenseStatus === 'rejected') {
+        return res.status(403).json({ error: 'Your gym registration was not approved', accountStatus: 'rejected' });
+      }
+
       const expired =
         owner.licenseStatus === 'suspended' ||
         (owner.licenseExpiresAt && new Date(owner.licenseExpiresAt) < new Date());

@@ -62,13 +62,13 @@ const Members = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="page-title">Members</h1>
           <p className="page-subtitle">Manage your gym members</p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={handleExport} className="btn-secondary" disabled={filteredMembers.length === 0}>
             <Download size={18} />
             <span>Export CSV</span>

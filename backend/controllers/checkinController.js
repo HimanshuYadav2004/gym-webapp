@@ -74,7 +74,9 @@ export const confirmCheckIn = async (req, res) => {
     if (existing) {
       return res.json({
         alreadyCheckedIn: true,
+        stillIn: !existing.checkOutTime,
         checkInTime: existing.checkInTime,
+        checkOutTime: existing.checkOutTime,
         member: { fullName: member.fullName, photoUrl: member.photoUrl }
       });
     }

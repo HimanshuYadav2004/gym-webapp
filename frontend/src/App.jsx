@@ -15,6 +15,7 @@ import Payments from './pages/Payments';
 import Attendance from './pages/Attendance';
 import CheckIn from './pages/CheckIn';
 import RenewLicense from './pages/RenewLicense';
+import PendingApproval from './pages/PendingApproval';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminGyms from './pages/admin/AdminGyms';
 import AdminGymDetail from './pages/admin/AdminGymDetail';
@@ -29,7 +30,11 @@ const ProtectedRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const { user } = useAuth();
   if (!user) return children;
-  return <Navigate to={user.isSuperAdmin ? '/admin/dashboard' : '/dashboard'} />;
+  if (user.isSuperAdmin) return <Navigate to="/admin/dashboard" />;
+  if (user.licenseStatus === 'pending' || user.licenseStatus === 'rejected') {
+    return <Navigate to="/pending-approval" />;
+  }
+  return <Navigate to="/dashboard" />;
 };
 
 const SuperAdminRoute = ({ children }) => {
@@ -52,6 +57,7 @@ function App() {
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
           <Route path="/checkin/:gymOwnerId" element={<CheckIn />} />
           <Route path="/renew" element={<ProtectedRoute><RenewLicense /></ProtectedRoute>} />
+          <Route path="/pending-approval" element={<ProtectedRoute><PendingApproval /></ProtectedRoute>} />
 
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="dashboard" element={<Dashboard />} />

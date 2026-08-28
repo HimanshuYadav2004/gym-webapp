@@ -36,8 +36,6 @@ export const registerGymOwner = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const trialExpiresAt = new Date();
-    trialExpiresAt.setDate(trialExpiresAt.getDate() + TRIAL_DAYS);
 
     const gymOwner = await prisma.gymOwner.create({
       data: {
@@ -47,8 +45,7 @@ export const registerGymOwner = async (req, res) => {
         phoneNumber,
         gymName,
         gymAddress,
-        licenseStatus: 'trial',
-        licenseExpiresAt: trialExpiresAt
+        licenseStatus: 'pending'
       },
       select: ownerSelect
     });
@@ -56,7 +53,7 @@ export const registerGymOwner = async (req, res) => {
     const token = signToken(gymOwner);
 
     res.status(201).json({
-      message: 'Gym owner registered successfully',
+      message: 'Registration submitted — awaiting admin approval',
       token,
       gymOwner
     });

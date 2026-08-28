@@ -7,7 +7,7 @@ import {
   forgotPassword,
   resetPassword
 } from '../controllers/authController.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { identifyMiddleware } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimit.js';
 import { handleValidationErrors } from '../middleware/validate.js';
 
@@ -31,6 +31,6 @@ router.post('/register', authLimiter, registerValidation, handleValidationErrors
 router.post('/login', authLimiter, loginValidation, handleValidationErrors, loginGymOwner);
 router.post('/forgot-password', authLimiter, body('email').isEmail().normalizeEmail(), handleValidationErrors, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
-router.get('/profile', authMiddleware, getProfile);
+router.get('/profile', identifyMiddleware, getProfile);
 
 export default router;

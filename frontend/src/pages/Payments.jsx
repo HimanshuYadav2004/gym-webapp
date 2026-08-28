@@ -64,12 +64,12 @@ const Payments = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="page-title">Payments</h1>
           <p className="page-subtitle">Track all payment transactions</p>
         </div>
-        <button onClick={handleExport} className="btn-secondary" disabled={payments.length === 0}>
+        <button onClick={handleExport} className="btn-secondary self-start sm:self-auto" disabled={payments.length === 0}>
           <Download size={18} />
           <span>Export CSV</span>
         </button>

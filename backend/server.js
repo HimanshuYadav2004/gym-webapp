@@ -16,6 +16,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import checkinRoutes from './routes/checkinRoutes.js';
 import licenseRoutes from './routes/licenseRoutes.js';
 import superAdminRoutes from './routes/superAdminRoutes.js';
+import { startAutoCheckoutJob } from './jobs/autoCheckout.js';
 
 // Use Supabase storage for production, local storage for development
 const useSupabaseStorage = process.env.USE_SUPABASE_STORAGE === 'true';
@@ -80,4 +81,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🏋️ Server is running on port ${PORT}`);
   console.log(`📍 API URL: http://localhost:${PORT}`);
+  startAutoCheckoutJob();
 });

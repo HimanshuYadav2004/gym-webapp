@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -7,12 +8,15 @@ import {
   IndianRupee,
   AlertCircle,
   LogOut,
-  Dumbbell
+  Dumbbell,
+  Menu,
+  X
 } from 'lucide-react';
 
 const Layout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -36,19 +40,55 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen flex bg-ink-950">
+      {/* Mobile topbar */}
+      <div className="md:hidden fixed top-0 inset-x-0 z-30 h-16 bg-ink-900 border-b border-white/10 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-500/15 ring-1 ring-primary-400/25">
+            <Dumbbell className="text-primary-400" size={16} />
+          </div>
+          <span className="font-display text-base tracking-wide">
+            GYM<span className="text-primary-500">FLOW</span>
+          </span>
+        </div>
+        <button onClick={() => setMobileOpen(true)} className="text-white p-2 -mr-2" aria-label="Open menu">
+          <Menu size={22} />
+        </button>
+      </div>
+
+      {/* Mobile drawer backdrop */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/60 z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-72 shrink-0 h-screen sticky top-0 flex flex-col bg-ink-900 border-r border-white/10">
+      <aside
+        className={`w-72 shrink-0 h-screen fixed md:sticky top-0 z-50 flex flex-col bg-ink-900 border-r border-white/10 transition-transform duration-300 md:translate-x-0 ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="px-6 pt-7 pb-6">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary-500/15 ring-1 ring-primary-400/25">
-              <Dumbbell className="text-primary-400" size={22} />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary-500/15 ring-1 ring-primary-400/25 shrink-0">
+                <Dumbbell className="text-primary-400" size={22} />
+              </div>
+              <div className="min-w-0">
+                <h1 className="font-display text-lg tracking-wide leading-none">
+                  GYM<span className="text-primary-500">FLOW</span>
+                </h1>
+                <p className="text-xs text-ink-400 mt-1.5 truncate">{user?.gymName}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1 className="font-display text-lg tracking-wide leading-none">
-                GYM<span className="text-primary-500">FLOW</span>
-              </h1>
-              <p className="text-xs text-ink-400 mt-1.5 truncate">{user?.gymName}</p>
-            </div>
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="md:hidden text-ink-400 hover:text-white p-1 shrink-0"
+              aria-label="Close menu"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
 
@@ -60,6 +100,7 @@ const Layout = () => {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={() => setMobileOpen(false)}
               className={({ isActive }) => (isActive ? 'sidebar-link-active' : 'sidebar-link')}
             >
               <item.icon size={18} strokeWidth={2.2} />
@@ -91,8 +132,8 @@ const Layout = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0">
-        <div className="max-w-[1400px] mx-auto p-6 md:p-10">
+      <main className="flex-1 min-w-0 pt-16 md:pt-0">
+        <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-10">
           <Outlet />
         </div>
       </main>
