@@ -34,13 +34,20 @@ model LicensePayment {
   id         String   @id @default(uuid())
   amount     Decimal  @db.Decimal(10, 2)
   periodDays Int      @default(30)
-  paidAt     DateTime @default(now())
+  status     String   @default("paid") // created, paid, failed — "created" until Razorpay confirms
+  method     String   @default("admin_grant") // razorpay, admin_grant
+  createdAt  DateTime @default(now())
+  paidAt     DateTime?
+
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String?
 
   gymOwnerId String
   gymOwner   GymOwner @relation(fields: [gymOwnerId], references: [id], onDelete: Cascade)
 
   @@map("license_payments")
   @@index([gymOwnerId])
+  @@index([razorpayOrderId])
 }
 
 model AuditLog {

@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { Dumbbell, ShieldAlert, Check, CreditCard, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatINR } from '../utils/currency';
+import { loadRazorpayScript } from '../utils/loadRazorpay';
 
 const perks = [
   'Unlimited members, payments & attendance tracking',
@@ -31,13 +32,57 @@ const RenewLicense = () => {
   const handlePay = async () => {
     setPaying(true);
     try {
-      const res = await axios.post('/api/license/renew');
-      toast.success('Payment successful — welcome back!');
-      setLicense(res.data.license);
-      setTimeout(() => navigate('/dashboard'), 900);
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        toast.error('Could not load payment gateway — check your connection');
+        setPaying(false);
+        return;
+      }
+
+      const { data: order } = await axios.post('/api/license/order');
+
+      const checkout = new window.Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.orderId,
+        name: 'GymFlow',
+        description: `${license?.licensePlan || 'Monthly'} plan renewal — ${order.gymName}`,
+        prefill: {
+          name: order.gymName,
+          email: order.email,
+          contact: order.phoneNumber
+        },
+        theme: { color: '#dc2626' },
+        handler: async (response) => {
+          try {
+            const res = await axios.post('/api/license/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            toast.success('Payment successful — welcome back!');
+            setLicense(res.data.license);
+            setTimeout(() => navigate('/dashboard'), 900);
+          } catch (error) {
+            toast.error(error.response?.data?.error || 'Payment verification failed');
+          } finally {
+            setPaying(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setPaying(false)
+        }
+      });
+
+      checkout.on('payment.failed', () => {
+        toast.error('Payment failed — please try again');
+        setPaying(false);
+      });
+
+      checkout.open();
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Payment failed');
-    } finally {
+      toast.error(error.response?.data?.error || 'Could not start payment');
       setPaying(false);
     }
   };
@@ -105,10 +150,10 @@ const RenewLicense = () => {
               </div>
 
               <button onClick={handlePay} disabled={paying} className="w-full btn-primary py-3">
-                {paying ? 'Processing payment...' : `Pay ${formatINR(license?.licenseAmount || 999)} & Reactivate`}
+                {paying ? 'Opening secure checkout...' : `Pay ${formatINR(license?.licenseAmount || 999)} & Reactivate`}
               </button>
               <p className="text-center text-xs text-ink-600 mt-3">
-                Demo checkout — no real payment gateway connected yet.
+                Secured by Razorpay — cards, UPI &amp; netbanking accepted.
               </p>
 
               <button onClick={handleLogout} className="btn-ghost text-ink-500 hover:text-white w-full mt-2 text-sm">

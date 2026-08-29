@@ -12,7 +12,7 @@ export const getPlatformStats = async (req, res) => {
         where: gymFilter,
         _count: { _all: true }
       }),
-      prisma.licensePayment.aggregate({ _sum: { amount: true } })
+      prisma.licensePayment.aggregate({ where: { status: 'paid' }, _sum: { amount: true } })
     ]);
 
     const byStatus = { pending: 0, trial: 0, active: 0, expired: 0, suspended: 0, rejected: 0 };
@@ -111,7 +111,8 @@ export const getGymById = async (req, res) => {
           orderBy: { createdAt: 'desc' }
         },
         licensePayments: {
-          orderBy: { paidAt: 'desc' }
+          where: { status: 'paid' },
+          orderBy: { createdAt: 'desc' }
         }
       }
     });
@@ -149,7 +150,7 @@ export const updateGymLicense = async (req, res) => {
       data = { licenseStatus: 'active', licenseExpiresAt: newExpiry };
 
       await prisma.licensePayment.create({
-        data: { gymOwnerId: id, amount: gym.licenseAmount, periodDays: parseInt(days) || 30 }
+        data: { gymOwnerId: id, amount: gym.licenseAmount, periodDays: parseInt(days) || 30, paidAt: new Date() }
       });
     } else if (action === 'suspend') {
       data = { licenseStatus: 'suspended' };

@@ -50,7 +50,10 @@ app.use(cors({
     callback(new Error('Not allowed by CORS'));
   }
 }));
-app.use(express.json());
+// Capture the raw body alongside the parsed one — the Razorpay webhook
+// signature is computed over the exact raw bytes, which express.json()
+// otherwise discards after parsing.
+app.use(express.json({ verify: (req, res, buf) => { req.rawBody = buf; } }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files
