@@ -75,8 +75,10 @@ const RenewLicense = () => {
         }
       });
 
-      checkout.on('payment.failed', () => {
-        toast.error('Payment failed — please try again');
+      checkout.on('payment.failed', (response) => {
+        console.error('Razorpay payment.failed:', response.error);
+        const reason = response.error?.description || response.error?.reason || 'Payment failed';
+        toast.error(reason);
         setPaying(false);
       });
 
