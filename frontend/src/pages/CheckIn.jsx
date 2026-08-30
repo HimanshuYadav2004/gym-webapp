@@ -46,7 +46,7 @@ const CheckIn = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('/api/checkin/confirm', { memberId: selected.id });
+      const res = await axios.post('/api/checkin/confirm', { memberId: selected.id, gymOwnerId });
       setResult(res.data);
       setStep('done');
     } catch (err) {

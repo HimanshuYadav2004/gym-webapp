@@ -18,3 +18,22 @@ export const checkinLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false
 });
+
+// Order creation / payment verification — real money now moves through these,
+// so cap how many orders one account can spin up or verify attempts in a window
+export const paymentLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 15,
+  message: { error: 'Too many payment attempts. Please wait a few minutes and try again.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Razorpay's webhook — signature-verified already, this just caps raw request
+// volume so a flood of junk POSTs can't burn server resources
+export const webhookLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false
+});

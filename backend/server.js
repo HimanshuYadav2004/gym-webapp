@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -37,6 +38,16 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Middleware
+// CSP is disabled here — this server only serves JSON + uploaded images, never
+// HTML, so a page-oriented CSP has nothing to protect and would only risk
+// interfering with the /uploads static route. crossOriginResourcePolicy is
+// relaxed for the same reason: member photos are loaded cross-origin from the
+// Vercel-hosted frontend, and Helmet's default 'same-origin' would block that.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
   .split(',')
   .map((o) => o.trim());
@@ -75,10 +86,12 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Gym Management API is running' });
 });
 
-// Error handling middleware
+// Error handling middleware — full detail stays server-side only; a client
+// (or an attacker probing for info) never sees more than a generic message.
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: err.message || 'Something went wrong!' });
+  const message = process.env.NODE_ENV === 'production' ? 'Something went wrong!' : (err.message || 'Something went wrong!');
+  res.status(err.status || 500).json({ error: message });
 });
 
 app.listen(PORT, () => {

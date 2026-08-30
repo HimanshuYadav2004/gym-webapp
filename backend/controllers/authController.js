@@ -35,7 +35,7 @@ export const registerGymOwner = async (req, res) => {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     const gymOwner = await prisma.gymOwner.create({
       data: {
@@ -143,7 +143,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ error: 'Invalid reset token' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
     await prisma.gymOwner.update({
       where: { id: decoded.gymOwnerId },
       data: { password: hashedPassword }

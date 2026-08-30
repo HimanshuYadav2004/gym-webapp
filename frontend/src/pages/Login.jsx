@@ -85,11 +85,6 @@ const Login = () => {
         </Link>
       </p>
 
-      <div className="mt-6 pt-6 border-t border-white/10 text-center">
-        <p className="text-xs text-ink-500">
-          Demo login: <span className="font-medium text-ink-400">karanveer@ironparadise.in</span> / <span className="font-medium text-ink-400">password123</span>
-        </p>
-      </div>
     </AuthLayout>
   );
 };

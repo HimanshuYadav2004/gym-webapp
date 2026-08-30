@@ -54,10 +54,14 @@ export const lookupMember = async (req, res) => {
 // Public: confirm and record the check-in
 export const confirmCheckIn = async (req, res) => {
   try {
-    const { memberId } = req.body;
+    const { memberId, gymOwnerId } = req.body;
+
+    if (!gymOwnerId) {
+      return res.status(400).json({ error: 'Missing gym reference' });
+    }
 
     const member = await prisma.member.findFirst({
-      where: { id: memberId, isActive: true }
+      where: { id: memberId, gymOwnerId, isActive: true }
     });
 
     if (!member) {
