@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckCircle2, Clock, Users, X, QrCode, Copy, LogOut } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Users, X, QrCode, Copy, LogOut, Download, Filter } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
 import QRCode from '../components/QRCode';
+import { downloadCSV } from '../utils/csv';
 
 const POLL_INTERVAL = 8000;
 
@@ -17,6 +18,13 @@ const Attendance = () => {
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const prevCountRef = useRef(0);
+
+  const [reportRange, setReportRange] = useState({
+    startDate: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
+    endDate: format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  });
+  const [reportRows, setReportRows] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
 
   const checkInUrl = `${window.location.origin}/checkin/${user?.id}`;
 
@@ -80,6 +88,35 @@ const Attendance = () => {
   const copyCheckInLink = () => {
     navigator.clipboard.writeText(checkInUrl);
     toast.success('Link copied');
+  };
+
+  const fetchReport = async () => {
+    setReportLoading(true);
+    try {
+      const res = await axios.get('/api/attendance/report', {
+        params: { startDate: reportRange.startDate, endDate: `${reportRange.endDate}T23:59:59` }
+      });
+      setReportRows(res.data.attendance);
+    } catch {
+      toast.error('Failed to fetch attendance report');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const exportReport = () => {
+    downloadCSV(
+      `attendance-${reportRange.startDate}-to-${reportRange.endDate}.csv`,
+      ['Date', 'Member', 'Membership ID', 'Check-In', 'Check-Out'],
+      reportRows.map((r) => [
+        format(new Date(r.checkInTime), 'yyyy-MM-dd'),
+        r.member.fullName,
+        r.member.membershipId,
+        format(new Date(r.checkInTime), 'hh:mm a'),
+        r.checkOutTime ? format(new Date(r.checkOutTime), 'hh:mm a') : ''
+      ])
+    );
+    toast.success('Attendance exported');
   };
 
   if (loading) {
@@ -236,6 +273,86 @@ const Attendance = () => {
               <span>Check-in First Member</span>
             </button>
           </div>
+        )}
+      </div>
+
+      {/* Attendance Report / Export */}
+      <div className="card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-white">Attendance Report</h2>
+            <p className="text-sm text-ink-400">Look up and export check-ins for any date range</p>
+          </div>
+          {reportRows && (
+            <button onClick={exportReport} className="btn-secondary self-start sm:self-auto" disabled={reportRows.length === 0}>
+              <Download size={16} />
+              <span>Export CSV</span>
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-end mb-2">
+          <div className="flex-1 w-full">
+            <label className="text-xs text-ink-400 mb-1.5 block">Start Date</label>
+            <input
+              type="date"
+              className="input"
+              value={reportRange.startDate}
+              onChange={(e) => setReportRange({ ...reportRange, startDate: e.target.value })}
+            />
+          </div>
+          <div className="flex-1 w-full">
+            <label className="text-xs text-ink-400 mb-1.5 block">End Date</label>
+            <input
+              type="date"
+              className="input"
+              value={reportRange.endDate}
+              onChange={(e) => setReportRange({ ...reportRange, endDate: e.target.value })}
+            />
+          </div>
+          <button onClick={fetchReport} disabled={reportLoading} className="btn-primary w-full md:w-auto">
+            <Filter size={16} />
+            <span>{reportLoading ? 'Loading...' : 'Run Report'}</span>
+          </button>
+        </div>
+
+        {reportRows && (
+          <>
+            <p className="text-sm text-ink-400 mt-4 mb-3">
+              <span className="font-bold text-white">{reportRows.length}</span> check-in{reportRows.length === 1 ? '' : 's'} between{' '}
+              {format(new Date(reportRange.startDate), 'MMM dd, yyyy')} and {format(new Date(reportRange.endDate), 'MMM dd, yyyy')}
+            </p>
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full">
+                <thead className="bg-white/5 border-b border-white/10">
+                  <tr>
+                    <th className="table-head">Member</th>
+                    <th className="table-head">Date</th>
+                    <th className="table-head">Check-In</th>
+                    <th className="table-head">Check-Out</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {reportRows.length > 0 ? (
+                    reportRows.map((r) => (
+                      <tr key={r.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-white">{r.member.fullName}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-ink-300">{format(new Date(r.checkInTime), 'MMM dd, yyyy')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-ink-300">{format(new Date(r.checkInTime), 'hh:mm a')}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-ink-300">
+                          {r.checkOutTime ? format(new Date(r.checkOutTime), 'hh:mm a') : '—'}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="px-4 py-12 text-center text-ink-400 text-sm">No check-ins in that range</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt, Check, X
+  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt, Check, X, ChevronRight
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -176,7 +176,11 @@ const AdminGymDetail = () => {
           <div className="space-y-1 max-h-96 overflow-y-auto">
             {gym.members.length > 0 ? (
               gym.members.map((m) => (
-                <div key={m.id} className="flex items-center gap-3 p-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors">
+                <Link
+                  key={m.id}
+                  to={`/admin/members/${m.id}`}
+                  className="flex items-center gap-3 p-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors"
+                >
                   {m.photoUrl ? (
                     <img src={m.photoUrl} alt={m.fullName} className="w-9 h-9 rounded-full object-cover shrink-0" />
                   ) : (
@@ -189,7 +193,8 @@ const AdminGymDetail = () => {
                   <span className={m.isActive ? 'badge-success' : 'badge-neutral'}>
                     {m.isActive ? 'Active' : 'Inactive'}
                   </span>
-                </div>
+                  <ChevronRight size={15} className="text-ink-600 shrink-0" />
+                </Link>
               ))
             ) : (
               <div className="text-center py-10">

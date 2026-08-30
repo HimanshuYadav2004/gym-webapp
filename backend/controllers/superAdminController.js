@@ -195,6 +195,31 @@ export const updateGymLicense = async (req, res) => {
   }
 };
 
+export const getMemberDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const member = await prisma.member.findUnique({
+      where: { id },
+      include: {
+        gymOwner: { select: { id: true, gymName: true, isSuperAdmin: true } },
+        memberships: { orderBy: { createdAt: 'desc' } },
+        payments: { orderBy: { paymentDate: 'desc' } },
+        attendance: { orderBy: { checkInTime: 'desc' }, take: 30 }
+      }
+    });
+
+    if (!member || member.gymOwner.isSuperAdmin) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+
+    res.json({ member });
+  } catch (error) {
+    console.error('Get member detail error:', error);
+    res.status(500).json({ error: 'Failed to fetch member' });
+  }
+};
+
 export const getAuditLog = async (req, res) => {
   try {
     const logs = await prisma.auditLog.findMany({

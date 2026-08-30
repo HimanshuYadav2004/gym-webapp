@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatINR } from '../utils/currency';
 import CountUp from '../components/CountUp';
 import SpotlightCard from '../components/SpotlightCard';
+import RevenueTrendChart from '../components/RevenueTrendChart';
 
 const countFormat = (n) => Math.round(n).toLocaleString('en-IN');
 
@@ -21,10 +22,15 @@ const greeting = () => {
 const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
+  const [revenueTrend, setRevenueTrend] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardData();
+    axios
+      .get('/api/dashboard/revenue-trend?days=30')
+      .then((res) => setRevenueTrend(res.data.trend))
+      .catch(() => {});
   }, []);
 
   const fetchDashboardData = async () => {
@@ -180,6 +186,21 @@ const Dashboard = () => {
             <p className="text-xs text-ink-500 mt-2.5 pt-2.5 border-t border-white/10">{stat.meta}</p>
           </SpotlightCard>
         ))}
+      </div>
+
+      {/* Revenue Trend */}
+      <div className="card animate-fade-up" style={{ animationDelay: '200ms' }}>
+        <div className="mb-2">
+          <h2 className="text-lg font-bold text-white">Revenue — Last 30 Days</h2>
+          <p className="text-sm text-ink-400">Daily payments received across your gym</p>
+        </div>
+        {revenueTrend ? (
+          <RevenueTrendChart data={revenueTrend} />
+        ) : (
+          <div className="flex justify-center py-16">
+            <div className="spinner w-8 h-8" />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Building2, LogOut, ShieldCheck, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Building2, LogOut, ShieldCheck, Menu, X, ScrollText } from 'lucide-react';
 
 const SuperAdminLayout = () => {
   const { user, logout } = useAuth();
@@ -16,6 +16,7 @@ const SuperAdminLayout = () => {
   const navItems = [
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Platform' },
     { path: '/admin/gyms', icon: Building2, label: 'All Gyms' },
+    { path: '/admin/audit-log', icon: ScrollText, label: 'Audit Log' },
   ];
 
   return (

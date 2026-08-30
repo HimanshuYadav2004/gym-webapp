@@ -122,6 +122,43 @@ export const getDashboardStats = async (req, res) => {
   }
 };
 
+export const getRevenueTrend = async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 30, 90);
+    const start = new Date();
+    start.setDate(start.getDate() - (days - 1));
+    start.setHours(0, 0, 0, 0);
+
+    const payments = await prisma.payment.findMany({
+      where: {
+        paymentDate: { gte: start },
+        member: { gymOwnerId: req.gymOwnerId }
+      },
+      select: { amount: true, paymentDate: true }
+    });
+
+    // Bucket by day and fill zero-revenue gaps so the chart line is continuous
+    const byDay = {};
+    payments.forEach((p) => {
+      const key = p.paymentDate.toISOString().slice(0, 10);
+      byDay[key] = (byDay[key] || 0) + parseFloat(p.amount);
+    });
+
+    const trend = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      trend.push({ date: key, amount: byDay[key] || 0 });
+    }
+
+    res.json({ trend });
+  } catch (error) {
+    console.error('Get revenue trend error:', error);
+    res.status(500).json({ error: 'Failed to fetch revenue trend' });
+  }
+};
+
 export const getDueMembers = async (req, res) => {
   try {
     const { days = 7 } = req.query;

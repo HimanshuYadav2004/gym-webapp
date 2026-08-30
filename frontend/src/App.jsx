@@ -19,6 +19,8 @@ import PendingApproval from './pages/PendingApproval';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminGyms from './pages/admin/AdminGyms';
 import AdminGymDetail from './pages/admin/AdminGymDetail';
+import AdminAuditLog from './pages/admin/AdminAuditLog';
+import AdminMemberDetail from './pages/admin/AdminMemberDetail';
 import Layout from './components/Layout';
 import SuperAdminLayout from './components/SuperAdminLayout';
 
@@ -73,6 +75,8 @@ function App() {
             <Route path="admin/dashboard" element={<AdminDashboard />} />
             <Route path="admin/gyms" element={<AdminGyms />} />
             <Route path="admin/gyms/:id" element={<AdminGymDetail />} />
+            <Route path="admin/audit-log" element={<AdminAuditLog />} />
+            <Route path="admin/members/:id" element={<AdminMemberDetail />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />

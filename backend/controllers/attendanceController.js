@@ -124,6 +124,32 @@ export const getAttendanceHistory = async (req, res) => {
   }
 };
 
+export const getAttendanceReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate and endDate are required' });
+    }
+
+    const attendance = await prisma.attendance.findMany({
+      where: {
+        checkInTime: { gte: new Date(startDate), lte: new Date(endDate) },
+        member: { gymOwnerId: req.gymOwnerId }
+      },
+      include: {
+        member: { select: { id: true, fullName: true, membershipId: true, photoUrl: true } }
+      },
+      orderBy: { checkInTime: 'desc' }
+    });
+
+    res.json({ attendance, count: attendance.length });
+  } catch (error) {
+    console.error('Get attendance report error:', error);
+    res.status(500).json({ error: 'Failed to fetch attendance report' });
+  }
+};
+
 export const getTodayAttendance = async (req, res) => {
   try {
     const today = new Date();
