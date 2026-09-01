@@ -124,6 +124,59 @@ export const getAttendanceHistory = async (req, res) => {
   }
 };
 
+export const getCheckinLocation = async (req, res) => {
+  try {
+    const gymOwner = await prisma.gymOwner.findUnique({
+      where: { id: req.gymOwnerId },
+      select: { gymLatitude: true, gymLongitude: true, checkinRadiusMeters: true }
+    });
+    res.json({
+      isSet: gymOwner.gymLatitude != null && gymOwner.gymLongitude != null,
+      radiusMeters: gymOwner.checkinRadiusMeters
+    });
+  } catch (error) {
+    console.error('Get checkin location error:', error);
+    res.status(500).json({ error: 'Failed to fetch check-in location' });
+  }
+};
+
+export const setCheckinLocation = async (req, res) => {
+  try {
+    const { latitude, longitude, radiusMeters } = req.body;
+
+    if (latitude == null || longitude == null) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    await prisma.gymOwner.update({
+      where: { id: req.gymOwnerId },
+      data: {
+        gymLatitude: latitude,
+        gymLongitude: longitude,
+        ...(radiusMeters ? { checkinRadiusMeters: parseInt(radiusMeters) } : {})
+      }
+    });
+
+    res.json({ message: 'Gym location saved' });
+  } catch (error) {
+    console.error('Set checkin location error:', error);
+    res.status(500).json({ error: 'Failed to save gym location' });
+  }
+};
+
+export const clearCheckinLocation = async (req, res) => {
+  try {
+    await prisma.gymOwner.update({
+      where: { id: req.gymOwnerId },
+      data: { gymLatitude: null, gymLongitude: null }
+    });
+    res.json({ message: 'Location check-in disabled' });
+  } catch (error) {
+    console.error('Clear checkin location error:', error);
+    res.status(500).json({ error: 'Failed to clear gym location' });
+  }
+};
+
 export const getAttendanceReport = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;

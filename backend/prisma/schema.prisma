@@ -24,6 +24,13 @@ model GymOwner {
   licenseAmount    Decimal   @default(999) @db.Decimal(10, 2)
   licenseExpiresAt DateTime?
 
+  // Geofenced check-in — null lat/lng means the gym hasn't set a location
+  // yet, in which case check-in stays location-unrestricted (opt-in, so
+  // existing gyms aren't broken by this).
+  gymLatitude         Float?
+  gymLongitude        Float?
+  checkinRadiusMeters Int    @default(150)
+
   members         Member[]
   licensePayments LicensePayment[]
 

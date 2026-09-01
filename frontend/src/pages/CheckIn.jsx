@@ -42,11 +42,29 @@ const CheckIn = () => {
     }
   };
 
+  const getPosition = () =>
+    new Promise((resolve, reject) => {
+      if (!navigator.geolocation) return reject(new Error('unsupported'));
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+    });
+
   const handleConfirm = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.post('/api/checkin/confirm', { memberId: selected.id, gymOwnerId });
+      let coords = {};
+      if (gym?.locationRequired) {
+        try {
+          const pos = await getPosition();
+          coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+        } catch {
+          setError("This gym requires location access to check in — please allow it and try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const res = await axios.post('/api/checkin/confirm', { memberId: selected.id, gymOwnerId, ...coords });
       setResult(res.data);
       setStep('done');
     } catch (err) {

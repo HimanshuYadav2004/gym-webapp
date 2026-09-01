@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Calendar, CheckCircle2, Clock, Users, X, QrCode, Copy, LogOut, Download, Filter } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Users, X, QrCode, Copy, LogOut, Download, Filter, MapPin, ShieldCheck, ShieldOff } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -26,7 +26,53 @@ const Attendance = () => {
   const [reportRows, setReportRows] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
 
+  const [locationStatus, setLocationStatus] = useState(null);
+  const [locationSaving, setLocationSaving] = useState(false);
+
   const checkInUrl = `${window.location.origin}/checkin/${user?.id}`;
+
+  useEffect(() => {
+    axios.get('/api/attendance/location').then((res) => setLocationStatus(res.data)).catch(() => {});
+  }, []);
+
+  const enableLocationLock = () => {
+    if (!navigator.geolocation) {
+      toast.error('Your browser doesn\'t support location access');
+      return;
+    }
+    setLocationSaving(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          await axios.put('/api/attendance/location', {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          });
+          toast.success('Gym location saved — check-in now requires being on-site');
+          setLocationStatus((s) => ({ ...s, isSet: true }));
+        } catch {
+          toast.error('Failed to save gym location');
+        } finally {
+          setLocationSaving(false);
+        }
+      },
+      () => {
+        toast.error('Location permission denied — allow it in your browser to set this up');
+        setLocationSaving(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const disableLocationLock = async () => {
+    try {
+      await axios.delete('/api/attendance/location');
+      setLocationStatus((s) => ({ ...s, isSet: false }));
+      toast.success('Location requirement removed — check-in works from anywhere again');
+    } catch {
+      toast.error('Failed to update setting');
+    }
+  };
 
   useEffect(() => {
     fetchTodayAttendance();
@@ -197,6 +243,44 @@ const Attendance = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Location-locked check-in */}
+      <div className="card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5 min-w-0">
+            <div className={`flex items-center justify-center w-11 h-11 rounded-xl shrink-0 ${
+              locationStatus?.isSet ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/5 text-ink-400'
+            }`}>
+              <MapPin size={20} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-white">On-Site Check-In</h2>
+              <p className="text-sm text-ink-400 mt-0.5">
+                {locationStatus?.isSet
+                  ? `Members must be within ${locationStatus.radiusMeters}m of the gym to check in.`
+                  : "Members can currently check in from anywhere. Lock it to this gym's location to stop that."}
+              </p>
+            </div>
+          </div>
+
+          {locationStatus?.isSet ? (
+            <button onClick={disableLocationLock} className="btn-secondary shrink-0 text-sm">
+              <ShieldOff size={15} />
+              <span>Turn Off</span>
+            </button>
+          ) : (
+            <button onClick={enableLocationLock} disabled={locationSaving} className="btn-primary shrink-0 text-sm">
+              <ShieldCheck size={15} />
+              <span>{locationSaving ? 'Getting location...' : 'Lock to This Location'}</span>
+            </button>
+          )}
+        </div>
+        {!locationStatus?.isSet && (
+          <p className="text-xs text-ink-500 mt-4 pt-4 border-t border-white/10">
+            Tap "Lock to This Location" while you're physically at the gym — it uses your current device location as the gym's spot.
+          </p>
+        )}
       </div>
 
       {/* Attendance List */}
