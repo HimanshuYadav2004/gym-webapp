@@ -195,6 +195,44 @@ export const updateGymLicense = async (req, res) => {
   }
 };
 
+export const updateGymPricing = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { licensePlan, licenseAmount } = req.body;
+
+    const gym = await prisma.gymOwner.findFirst({ where: { id, isSuperAdmin: false } });
+    if (!gym) {
+      return res.status(404).json({ error: 'Gym not found' });
+    }
+
+    const amount = Number(licenseAmount);
+    if (!licensePlan || !Number.isFinite(amount) || amount < 0) {
+      return res.status(400).json({ error: 'A plan name and a valid amount are required' });
+    }
+
+    const updated = await prisma.gymOwner.update({
+      where: { id },
+      data: { licensePlan, licenseAmount: amount },
+      select: { id: true, licensePlan: true, licenseAmount: true }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        action: 'license.pricing',
+        targetGymId: id,
+        targetGymName: gym.gymName,
+        actorEmail: req.email || 'unknown',
+        details: `${gym.licensePlan} @ ${gym.licenseAmount} -> ${licensePlan} @ ${amount}`
+      }
+    });
+
+    res.json({ message: 'Pricing updated', gym: updated });
+  } catch (error) {
+    console.error('Update gym pricing error:', error);
+    res.status(500).json({ error: 'Failed to update pricing' });
+  }
+};
+
 export const getMemberDetail = async (req, res) => {
   try {
     const { id } = req.params;

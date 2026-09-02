@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt, Check, X, ChevronRight
+  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt, Check, X, ChevronRight, Pencil
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -14,6 +14,7 @@ const AdminGymDetail = () => {
   const [gym, setGym] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
   const fetchGym = () => {
     axios
@@ -109,7 +110,16 @@ const AdminGymDetail = () => {
         <div className="p-5 bg-black/30 border border-white/10 rounded-2xl mb-5">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
             <div>
-              <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Plan</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Plan</p>
+                <button
+                  onClick={() => setShowPricingModal(true)}
+                  className="text-ink-500 hover:text-white transition-colors"
+                  title="Edit pricing"
+                >
+                  <Pencil size={12} />
+                </button>
+              </div>
               <p className="font-bold text-white mt-1.5">{gym.licensePlan} — {formatINR(gym.licenseAmount)}</p>
             </div>
             <div>
@@ -232,6 +242,85 @@ const AdminGymDetail = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {showPricingModal && (
+        <PricingModal
+          gym={gym}
+          onClose={() => setShowPricingModal(false)}
+          onSuccess={fetchGym}
+        />
+      )}
+    </div>
+  );
+};
+
+// Pricing Modal — lets a super admin set a custom monthly licence price
+// per gym (e.g. a premium/negotiated rate) instead of the platform default.
+const PricingModal = ({ gym, onClose, onSuccess }) => {
+  const [licensePlan, setLicensePlan] = useState(gym.licensePlan);
+  const [licenseAmount, setLicenseAmount] = useState(String(gym.licenseAmount));
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.patch(`/api/super-admin/gyms/${gym.id}/pricing`, { licensePlan, licenseAmount });
+      toast.success('Pricing updated');
+      onSuccess();
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to update pricing');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold text-white">Edit Pricing</h3>
+          <button onClick={onClose} className="text-ink-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="label">Plan Name</label>
+            <input
+              type="text"
+              className="input"
+              value={licensePlan}
+              onChange={(e) => setLicensePlan(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="label">Amount (₹ / period)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className="input"
+              value={licenseAmount}
+              onChange={(e) => setLicenseAmount(e.target.value)}
+              required
+            />
+            <p className="text-xs text-ink-500 mt-1.5">
+              Applies from this gym's next renewal — it does not change their current expiry date.
+            </p>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="submit" disabled={loading} className="flex-1 btn-primary">
+              {loading ? 'Saving...' : 'Save Pricing'}
+            </button>
+            <button type="button" onClick={onClose} className="btn-secondary px-4">
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

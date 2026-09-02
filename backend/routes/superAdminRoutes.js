@@ -4,6 +4,7 @@ import {
   getAllGyms,
   getGymById,
   updateGymLicense,
+  updateGymPricing,
   getMemberDetail,
   getAuditLog
 } from '../controllers/superAdminController.js';
@@ -17,6 +18,7 @@ router.get('/stats', getPlatformStats);
 router.get('/gyms', getAllGyms);
 router.get('/gyms/:id', getGymById);
 router.patch('/gyms/:id/license', updateGymLicense);
+router.patch('/gyms/:id/pricing', updateGymPricing);
 router.get('/members/:id', getMemberDetail);
 router.get('/audit-log', getAuditLog);
 
