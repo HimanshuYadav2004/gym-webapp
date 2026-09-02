@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Users, Phone, Mail, Activity, Download } from 'lucide-react';
+import { Plus, Search, Users, Phone, Mail, MapPin, Activity, Download } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -33,7 +33,8 @@ const Members = () => {
   const filteredMembers = members.filter(member =>
     member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.membershipId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.phoneNumber.includes(searchTerm)
+    member.phoneNumber.includes(searchTerm) ||
+    (member.address || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleExport = () => {
@@ -87,7 +88,7 @@ const Members = () => {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-500" size={18} />
             <input
               type="text"
-              placeholder="Search by name, ID, or phone..."
+              placeholder="Search by name, ID, phone, or address..."
               className="input pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -144,6 +145,13 @@ const Members = () => {
                         {member.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
+
+                    {member.address && (
+                      <div className="mt-2 flex items-start gap-2 text-sm text-ink-200">
+                        <MapPin size={13} className="mt-0.5 text-ink-500 shrink-0" />
+                        <span className="break-words">{member.address}</span>
+                      </div>
+                    )}
 
                     <div className="mt-3 space-y-1.5">
                       {member.phoneNumber && (
