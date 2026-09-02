@@ -5,6 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { downloadCSV } from '../utils/csv';
+import { digitsOnly, formatPhoneDisplay } from '../utils/phone';
 
 const Members = () => {
   const [members, setMembers] = useState([]);
@@ -30,12 +31,16 @@ const Members = () => {
     }
   };
 
-  const filteredMembers = members.filter(member =>
-    member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.membershipId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.phoneNumber.includes(searchTerm) ||
-    (member.address || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const searchDigits = digitsOnly(searchTerm);
+  const filteredMembers = members.filter(member => {
+    const term = searchTerm.toLowerCase().trim();
+    return (
+      member.fullName.toLowerCase().includes(term) ||
+      member.membershipId.toLowerCase().includes(term) ||
+      (member.address || '').toLowerCase().includes(term) ||
+      (searchDigits.length > 0 && digitsOnly(member.phoneNumber).includes(searchDigits))
+    );
+  });
 
   const handleExport = () => {
     downloadCSV(
@@ -157,7 +162,7 @@ const Members = () => {
                       {member.phoneNumber && (
                         <div className="flex items-center text-sm text-ink-400">
                           <Phone size={13} className="mr-2 text-ink-500" />
-                          {member.phoneNumber}
+                          {formatPhoneDisplay(member.phoneNumber)}
                         </div>
                       )}
                       {member.email && (

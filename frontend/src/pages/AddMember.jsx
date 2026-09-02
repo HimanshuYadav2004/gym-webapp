@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, User } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { digitsOnly, toStoredPhone } from '../utils/phone';
 
 const AddMember = () => {
   const navigate = useNavigate();
@@ -33,13 +34,19 @@ const AddMember = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.phoneNumber.length !== 10) {
+      toast.error('Enter a valid 10-digit phone number');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const data = new FormData();
       Object.keys(formData).forEach(key => {
         if (formData[key]) {
-          data.append(key, formData[key]);
+          data.append(key, key === 'phoneNumber' ? toStoredPhone(formData[key]) : formData[key]);
         }
       });
 
@@ -121,14 +128,21 @@ const AddMember = () => {
 
             <div>
               <label className="label">Phone Number *</label>
-              <input
-                type="tel"
-                className="input"
-                placeholder="+91 98765 43210"
-                value={formData.phoneNumber}
-                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                required
-              />
+              <div className="flex">
+                <span className="input rounded-r-none border-r-0 !w-16 shrink-0 flex items-center justify-center text-ink-400">
+                  +91
+                </span>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  className="input rounded-l-none"
+                  placeholder="9876543210"
+                  maxLength={10}
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: digitsOnly(e.target.value).slice(0, 10) })}
+                  required
+                />
+              </div>
             </div>
 
             <div>
