@@ -1,5 +1,12 @@
 import prisma from '../config/db.js';
 
+// A super admin has no gym of their own — every gym-scoped lookup below
+// either targets an explicit gymOwnerId (super admin only, e.g. creating a
+// member for a specific gym) or is left unscoped for super admin so they can
+// reach any gym's records, exactly like a regular gym owner can reach only
+// their own.
+const ownerScope = (req) => (req.isSuperAdmin ? {} : { gymOwnerId: req.gymOwnerId });
+
 export const createMember = async (req, res) => {
   try {
     const {
@@ -9,12 +16,24 @@ export const createMember = async (req, res) => {
       dateOfBirth,
       gender,
       address,
-      emergencyContact
+      emergencyContact,
+      gymOwnerId
     } = req.body;
+
+    // Only a super admin may target another gym; a regular gym owner always
+    // creates under their own account regardless of what the client sends.
+    const targetGymOwnerId = req.isSuperAdmin && gymOwnerId ? gymOwnerId : req.gymOwnerId;
+
+    if (req.isSuperAdmin) {
+      const targetGym = await prisma.gymOwner.findFirst({ where: { id: targetGymOwnerId, isSuperAdmin: false } });
+      if (!targetGym) {
+        return res.status(404).json({ error: 'Target gym not found' });
+      }
+    }
 
     // Generate unique membership ID
     const memberCount = await prisma.member.count({
-      where: { gymOwnerId: req.gymOwnerId }
+      where: { gymOwnerId: targetGymOwnerId }
     });
     const membershipId = `MEM${Date.now()}${memberCount + 1}`;
 
@@ -31,7 +50,7 @@ export const createMember = async (req, res) => {
         gender,
         address,
         emergencyContact,
-        gymOwnerId: req.gymOwnerId
+        gymOwnerId: targetGymOwnerId
       }
     });
 
@@ -93,7 +112,7 @@ export const getMemberById = async (req, res) => {
     const member = await prisma.member.findFirst({
       where: {
         id,
-        gymOwnerId: req.gymOwnerId
+        ...ownerScope(req)
       },
       include: {
         memberships: {
@@ -138,7 +157,7 @@ export const updateMember = async (req, res) => {
     const member = await prisma.member.findFirst({
       where: {
         id,
-        gymOwnerId: req.gymOwnerId
+        ...ownerScope(req)
       }
     });
 
@@ -181,7 +200,7 @@ export const deleteMember = async (req, res) => {
     const member = await prisma.member.findFirst({
       where: {
         id,
-        gymOwnerId: req.gymOwnerId
+        ...ownerScope(req)
       }
     });
 

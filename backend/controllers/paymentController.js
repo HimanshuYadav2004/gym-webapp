@@ -1,14 +1,16 @@
 import prisma from '../config/db.js';
 
+const ownerScope = (req) => (req.isSuperAdmin ? {} : { gymOwnerId: req.gymOwnerId });
+
 export const createPayment = async (req, res) => {
   try {
     const { memberId, amount, paymentMethod, remarks, paymentDate } = req.body;
 
-    // Verify member belongs to this gym owner
+    // Verify member exists (and belongs to this gym owner, unless super admin)
     const member = await prisma.member.findFirst({
       where: {
         id: memberId,
-        gymOwnerId: req.gymOwnerId
+        ...ownerScope(req)
       }
     });
 
@@ -72,7 +74,7 @@ export const updatePayment = async (req, res) => {
     const payment = await prisma.payment.findFirst({
       where: {
         id,
-        member: { gymOwnerId: req.gymOwnerId }
+        member: { ...ownerScope(req) }
       }
     });
 
@@ -107,7 +109,7 @@ export const deletePayment = async (req, res) => {
     const payment = await prisma.payment.findFirst({
       where: {
         id,
-        member: { gymOwnerId: req.gymOwnerId }
+        member: { ...ownerScope(req) }
       }
     });
 

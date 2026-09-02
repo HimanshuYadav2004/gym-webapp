@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt, Check, X, ChevronRight, Pencil
+  ArrowLeft, Phone, Mail, MapPin, Calendar, ShieldCheck, ShieldOff, ShieldPlus, Users, Receipt, Check, X, ChevronRight, Pencil, Plus
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { formatINR } from '../../utils/currency';
+import { digitsOnly, toStoredPhone } from '../../utils/phone';
 
 const AdminGymDetail = () => {
   const { id } = useParams();
@@ -15,6 +16,7 @@ const AdminGymDetail = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
 
   const fetchGym = () => {
     axios
@@ -181,7 +183,16 @@ const AdminGymDetail = () => {
         <div className="card">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-bold text-white">Members</h2>
-            <span className="badge-neutral">{gym.members.length}</span>
+            <div className="flex items-center gap-2">
+              <span className="badge-neutral">{gym.members.length}</span>
+              <button
+                onClick={() => setShowAddMemberModal(true)}
+                className="btn-secondary text-sm !py-1.5"
+              >
+                <Plus size={14} />
+                <span>Add Member</span>
+              </button>
+            </div>
           </div>
           <div className="space-y-1 max-h-96 overflow-y-auto">
             {gym.members.length > 0 ? (
@@ -251,6 +262,14 @@ const AdminGymDetail = () => {
           onSuccess={fetchGym}
         />
       )}
+
+      {showAddMemberModal && (
+        <AddMemberModal
+          gymOwnerId={gym.id}
+          onClose={() => setShowAddMemberModal(false)}
+          onSuccess={fetchGym}
+        />
+      )}
     </div>
   );
 };
@@ -315,6 +334,113 @@ const PricingModal = ({ gym, onClose, onSuccess }) => {
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={loading} className="flex-1 btn-primary">
               {loading ? 'Saving...' : 'Save Pricing'}
+            </button>
+            <button type="button" onClick={onClose} className="btn-secondary px-4">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Add Member Modal — creates a member directly under a specific gym, the
+// same fields a gym owner fills in on their own Add Member page, targeted
+// via an explicit gymOwnerId that only a super admin is allowed to send.
+const AddMemberModal = ({ gymOwnerId, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phoneNumber: '',
+    email: '',
+    address: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (formData.phoneNumber.length !== 10) {
+      toast.error('Enter a valid 10-digit phone number');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post('/api/members', {
+        ...formData,
+        phoneNumber: toStoredPhone(formData.phoneNumber),
+        gymOwnerId
+      });
+      toast.success('Member added successfully!');
+      onSuccess();
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to add member');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-bold text-white">Add Member</h3>
+          <button onClick={onClose} className="text-ink-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="label">Full Name *</label>
+            <input
+              type="text"
+              className="input"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <label className="label">Phone Number *</label>
+            <div className="flex">
+              <span className="input rounded-r-none border-r-0 !w-16 shrink-0 flex items-center justify-center text-ink-400">
+                +91
+              </span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                className="input rounded-l-none"
+                placeholder="9876543210"
+                maxLength={10}
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: digitsOnly(e.target.value).slice(0, 10) })}
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="label">Email</label>
+            <input
+              type="email"
+              className="input"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="label">Address</label>
+            <textarea
+              className="input"
+              rows="2"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="submit" disabled={loading} className="flex-1 btn-primary">
+              {loading ? 'Adding...' : 'Add Member'}
             </button>
             <button type="button" onClick={onClose} className="btn-secondary px-4">
               Cancel

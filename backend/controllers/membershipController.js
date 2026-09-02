@@ -1,14 +1,16 @@
 import prisma from '../config/db.js';
 
+const ownerScope = (req) => (req.isSuperAdmin ? {} : { gymOwnerId: req.gymOwnerId });
+
 export const createMembership = async (req, res) => {
   try {
     const { memberId, planName, planDuration, planAmount, startDate } = req.body;
 
-    // Verify member belongs to this gym owner
+    // Verify member exists (and belongs to this gym owner, unless super admin)
     const member = await prisma.member.findFirst({
       where: {
         id: memberId,
-        gymOwnerId: req.gymOwnerId
+        ...ownerScope(req)
       }
     });
 
@@ -46,11 +48,11 @@ export const renewMembership = async (req, res) => {
   try {
     const { memberId, planName, planDuration, planAmount } = req.body;
 
-    // Verify member belongs to this gym owner
+    // Verify member exists (and belongs to this gym owner, unless super admin)
     const member = await prisma.member.findFirst({
       where: {
         id: memberId,
-        gymOwnerId: req.gymOwnerId
+        ...ownerScope(req)
       },
       include: {
         memberships: {
@@ -106,7 +108,7 @@ export const updateMembership = async (req, res) => {
     const membership = await prisma.membership.findFirst({
       where: {
         id,
-        member: { gymOwnerId: req.gymOwnerId }
+        member: { ...ownerScope(req) }
       }
     });
 
@@ -143,7 +145,7 @@ export const deleteMembership = async (req, res) => {
     const membership = await prisma.membership.findFirst({
       where: {
         id,
-        member: { gymOwnerId: req.gymOwnerId }
+        member: { ...ownerScope(req) }
       }
     });
 

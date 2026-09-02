@@ -1,5 +1,7 @@
 import prisma from '../config/db.js';
 
+const ownerScope = (req) => (req.isSuperAdmin ? {} : { gymOwnerId: req.gymOwnerId });
+
 export const checkIn = async (req, res) => {
   try {
     const { memberId } = req.body;
@@ -93,7 +95,7 @@ export const updateAttendance = async (req, res) => {
     const attendance = await prisma.attendance.findFirst({
       where: {
         id,
-        member: { gymOwnerId: req.gymOwnerId }
+        member: { ...ownerScope(req) }
       }
     });
 
@@ -126,7 +128,7 @@ export const deleteAttendance = async (req, res) => {
     const attendance = await prisma.attendance.findFirst({
       where: {
         id,
-        member: { gymOwnerId: req.gymOwnerId }
+        member: { ...ownerScope(req) }
       }
     });
 
