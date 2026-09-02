@@ -98,6 +98,68 @@ export const renewMembership = async (req, res) => {
   }
 };
 
+export const updateMembership = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { planName, planDuration, planAmount, startDate, endDate, status } = req.body;
+
+    const membership = await prisma.membership.findFirst({
+      where: {
+        id,
+        member: { gymOwnerId: req.gymOwnerId }
+      }
+    });
+
+    if (!membership) {
+      return res.status(404).json({ error: 'Membership not found' });
+    }
+
+    const updatedMembership = await prisma.membership.update({
+      where: { id },
+      data: {
+        planName: planName ?? membership.planName,
+        planDuration: planDuration !== undefined ? parseInt(planDuration) : membership.planDuration,
+        planAmount: planAmount !== undefined ? parseFloat(planAmount) : membership.planAmount,
+        startDate: startDate ? new Date(startDate) : membership.startDate,
+        endDate: endDate ? new Date(endDate) : membership.endDate,
+        status: status ?? membership.status
+      }
+    });
+
+    res.json({
+      message: 'Membership updated successfully',
+      membership: updatedMembership
+    });
+  } catch (error) {
+    console.error('Update membership error:', error);
+    res.status(500).json({ error: 'Failed to update membership' });
+  }
+};
+
+export const deleteMembership = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const membership = await prisma.membership.findFirst({
+      where: {
+        id,
+        member: { gymOwnerId: req.gymOwnerId }
+      }
+    });
+
+    if (!membership) {
+      return res.status(404).json({ error: 'Membership not found' });
+    }
+
+    await prisma.membership.delete({ where: { id } });
+
+    res.json({ message: 'Membership deleted successfully' });
+  } catch (error) {
+    console.error('Delete membership error:', error);
+    res.status(500).json({ error: 'Failed to delete membership' });
+  }
+};
+
 export const getMembershipHistory = async (req, res) => {
   try {
     const { memberId } = req.params;

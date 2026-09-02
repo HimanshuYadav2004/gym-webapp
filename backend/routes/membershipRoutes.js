@@ -3,6 +3,8 @@ import { body } from 'express-validator';
 import {
   createMembership,
   renewMembership,
+  updateMembership,
+  deleteMembership,
   getMembershipHistory
 } from '../controllers/membershipController.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -19,6 +21,8 @@ const membershipValidation = [
 
 router.post('/', authMiddleware, membershipValidation, createMembership);
 router.post('/renew', authMiddleware, membershipValidation, renewMembership);
+router.put('/:id', authMiddleware, updateMembership);
+router.delete('/:id', authMiddleware, deleteMembership);
 router.get('/:memberId', authMiddleware, getMembershipHistory);
 
 export default router;

@@ -64,6 +64,66 @@ export const getPaymentHistory = async (req, res) => {
   }
 };
 
+export const updatePayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, paymentMethod, remarks, paymentDate } = req.body;
+
+    const payment = await prisma.payment.findFirst({
+      where: {
+        id,
+        member: { gymOwnerId: req.gymOwnerId }
+      }
+    });
+
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    const updatedPayment = await prisma.payment.update({
+      where: { id },
+      data: {
+        amount: amount !== undefined ? parseFloat(amount) : payment.amount,
+        paymentMethod: paymentMethod ?? payment.paymentMethod,
+        remarks: remarks !== undefined ? remarks : payment.remarks,
+        paymentDate: paymentDate ? new Date(paymentDate) : payment.paymentDate
+      }
+    });
+
+    res.json({
+      message: 'Payment updated successfully',
+      payment: updatedPayment
+    });
+  } catch (error) {
+    console.error('Update payment error:', error);
+    res.status(500).json({ error: 'Failed to update payment' });
+  }
+};
+
+export const deletePayment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const payment = await prisma.payment.findFirst({
+      where: {
+        id,
+        member: { gymOwnerId: req.gymOwnerId }
+      }
+    });
+
+    if (!payment) {
+      return res.status(404).json({ error: 'Payment not found' });
+    }
+
+    await prisma.payment.delete({ where: { id } });
+
+    res.json({ message: 'Payment deleted successfully' });
+  } catch (error) {
+    console.error('Delete payment error:', error);
+    res.status(500).json({ error: 'Failed to delete payment' });
+  }
+};
+
 export const getAllPayments = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;

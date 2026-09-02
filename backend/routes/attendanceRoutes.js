@@ -8,7 +8,9 @@ import {
   getAttendanceReport,
   getCheckinLocation,
   setCheckinLocation,
-  clearCheckinLocation
+  clearCheckinLocation,
+  updateAttendance,
+  deleteAttendance
 } from '../controllers/attendanceController.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -22,6 +24,8 @@ router.get('/report', authMiddleware, getAttendanceReport);
 router.get('/location', authMiddleware, getCheckinLocation);
 router.put('/location', authMiddleware, setCheckinLocation);
 router.delete('/location', authMiddleware, clearCheckinLocation);
+router.put('/:id', authMiddleware, updateAttendance);
+router.delete('/:id', authMiddleware, deleteAttendance);
 router.get('/:memberId', authMiddleware, getAttendanceHistory);
 
 export default router;

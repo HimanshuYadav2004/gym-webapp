@@ -131,6 +131,7 @@ export const updateMember = async (req, res) => {
       gender,
       address,
       emergencyContact,
+      joiningDate,
       isActive
     } = req.body;
 
@@ -158,7 +159,8 @@ export const updateMember = async (req, res) => {
         gender,
         address,
         emergencyContact,
-        isActive
+        joiningDate: joiningDate ? new Date(joiningDate) : member.joiningDate,
+        isActive: isActive === undefined ? member.isActive : isActive === 'true' || isActive === true
       }
     });
 

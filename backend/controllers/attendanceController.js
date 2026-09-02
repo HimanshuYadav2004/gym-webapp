@@ -85,6 +85,64 @@ export const checkOut = async (req, res) => {
   }
 };
 
+export const updateAttendance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { checkInTime, checkOutTime } = req.body;
+
+    const attendance = await prisma.attendance.findFirst({
+      where: {
+        id,
+        member: { gymOwnerId: req.gymOwnerId }
+      }
+    });
+
+    if (!attendance) {
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    const updatedAttendance = await prisma.attendance.update({
+      where: { id },
+      data: {
+        checkInTime: checkInTime ? new Date(checkInTime) : attendance.checkInTime,
+        checkOutTime: checkOutTime === '' ? null : checkOutTime ? new Date(checkOutTime) : attendance.checkOutTime
+      }
+    });
+
+    res.json({
+      message: 'Attendance updated successfully',
+      attendance: updatedAttendance
+    });
+  } catch (error) {
+    console.error('Update attendance error:', error);
+    res.status(500).json({ error: 'Failed to update attendance' });
+  }
+};
+
+export const deleteAttendance = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const attendance = await prisma.attendance.findFirst({
+      where: {
+        id,
+        member: { gymOwnerId: req.gymOwnerId }
+      }
+    });
+
+    if (!attendance) {
+      return res.status(404).json({ error: 'Attendance record not found' });
+    }
+
+    await prisma.attendance.delete({ where: { id } });
+
+    res.json({ message: 'Attendance record deleted successfully' });
+  } catch (error) {
+    console.error('Delete attendance error:', error);
+    res.status(500).json({ error: 'Failed to delete attendance record' });
+  }
+};
+
 export const getAttendanceHistory = async (req, res) => {
   try {
     const { memberId } = req.params;
